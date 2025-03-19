@@ -1,5 +1,8 @@
 export class CreateAlertDto {
-  datetime: Date;
-  votes: number;
   message: string;
+  date: Date;
+  icon?: string;
+  votes?: number;
+  restaurantId?: string;
+  publisherId?: string;
 }

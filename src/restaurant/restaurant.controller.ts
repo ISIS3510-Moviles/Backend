@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseIntPipe,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { RestaurantService } from './restaurant.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
@@ -27,18 +18,18 @@ export class RestaurantController {
   }
 
   @Get(':id')
-  getRestaurantById(@Param('id', ParseIntPipe) id: number) {
+  getRestaurantById(@Param('id') id: string) {
     return this.restaurantService.getRestaurantById(id);
   }
 
   @Delete(':id')
-  deleteRestaurantById(@Param('id', ParseIntPipe) id: number) {
+  deleteRestaurantById(@Param('id') id: string) {
     return this.restaurantService.deleteRestaurant(id);
   }
 
   @Patch(':id')
   updateRestaurantById(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateRestaurantDto: UpdateRestaurantDto,
   ) {
     return this.restaurantService.updateRestaurant(id, updateRestaurantDto);

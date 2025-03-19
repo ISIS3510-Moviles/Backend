@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseIntPipe,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { InstitutionService } from './institution.service';
 import { CreateInstitutionDto } from './dto/create-institution.dto';
 import { UpdateInstitutionDto } from './dto/update-institution.dto';
@@ -17,8 +8,8 @@ export class InstitutionController {
   constructor(private institutionService: InstitutionService) {}
 
   @Post()
-  createInstitution(@Body() CreateInstitutionDto: CreateInstitutionDto) {
-    return this.institutionService.createInstitution(CreateInstitutionDto);
+  createInstitution(@Body() createInstitutionDto: CreateInstitutionDto) {
+    return this.institutionService.createInstitution(createInstitutionDto);
   }
 
   @Get()
@@ -27,18 +18,18 @@ export class InstitutionController {
   }
 
   @Get(':id')
-  getInstitutionById(@Param('id', ParseIntPipe) id: number) {
+  getInstitutionById(@Param('id') id: string) {
     return this.institutionService.getInstitutionById(id);
   }
 
   @Delete(':id')
-  deleteInstitutionById(@Param('id', ParseIntPipe) id: number) {
+  deleteInstitutionById(@Param('id') id: string) {
     return this.institutionService.deleteInstitution(id);
   }
 
   @Patch(':id')
   updateInstitutionById(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateInstitutionDto: UpdateInstitutionDto,
   ) {
     return this.institutionService.updateInstitution(id, updateInstitutionDto);

@@ -1,38 +1,40 @@
-import { Reservation } from './reservation.entity';
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DeleteResult, Repository, UpdateResult } from 'typeorm';
+import admin from 'firebase.config';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 
 @Injectable()
 export class ReservationService {
-  constructor(
-    @InjectRepository(Reservation)
-    private reservationRepository: Repository<Reservation>,
-  ) {}
+  private db = admin.firestore();
+  private collectionName = 'reservations';
 
-  createReservation(reservation: CreateReservationDto): Promise<Reservation> {
-    const newReservation = this.reservationRepository.create(reservation);
-    return this.reservationRepository.save(newReservation);
+  
+
+  async createReservation(reservation: CreateReservationDto): Promise<any> {
+    const docRef = this.db.collection(this.collectionName).doc(); // Genera un ID automáticamente
+    await docRef.set(reservation);
+    return { id: docRef.id, ...reservation };
   }
 
-  getReservations(): Promise<Reservation[]> {
-    return this.reservationRepository.find();
+  async getReservations(): Promise<any[]> {
+    const snapshot = await this.db.collection(this.collectionName).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
-  getReservationById(id: number): Promise<Reservation | null> {
-    return this.reservationRepository.findOne({ where: { id } });
+  async getReservationById(id: string): Promise<any | null> {
+    const doc = await this.db.collection(this.collectionName).doc(id).get();
+    return doc.exists ? { id: doc.id, ...doc.data() } : null;
   }
 
-  deleteReservation(id: number): Promise<DeleteResult> {
-    return this.reservationRepository.delete({ id });
+  async deleteReservation(id: string): Promise<boolean> {
+    await this.db.collection(this.collectionName).doc(id).delete();
+    return true;
   }
 
-  updateReservation(
-    id: number,
-    reservation: UpdateReservationDto,
-  ): Promise<UpdateResult> {
-    return this.reservationRepository.update({ id }, reservation);
+  async updateReservation(id: string, reservation: UpdateReservationDto): Promise<boolean> {
+    await this.db.collection(this.collectionName).doc(id).update(
+      reservation as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>
+    );
+    return true;
   }
 }

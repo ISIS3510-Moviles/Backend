@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseIntPipe,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
@@ -27,18 +18,18 @@ export class CommentController {
   }
 
   @Get(':id')
-  getCommentById(@Param('id', ParseIntPipe) id: number) {
+  getCommentById(@Param('id') id: string) {
     return this.commentService.getCommentById(id);
   }
 
   @Delete(':id')
-  deleteCommentById(@Param('id', ParseIntPipe) id: number) {
+  deleteCommentById(@Param('id') id: string) {
     return this.commentService.deleteComment(id);
   }
 
   @Patch(':id')
   updateCommentById(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateCommentDto: UpdateCommentDto,
   ) {
     return this.commentService.updateComment(id, updateCommentDto);

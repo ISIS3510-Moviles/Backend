@@ -1,38 +1,39 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './user.entity';
-import { DeleteResult, Repository, UpdateResult } from 'typeorm';
+import admin from 'firebase.config'; 
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-  ) {}
+  private db = admin.firestore();
+  private collectionName = 'users';
 
-  createUser(user: CreateUserDto): Promise<User> {
-    const newUser = this.userRepository.create(user);
-    return this.userRepository.save(newUser);
+  async createUser(user: CreateUserDto): Promise<any> {
+    const docRef = this.db.collection(this.collectionName).doc();
+    await docRef.set(user);
+    return { id: docRef.id, ...user };
   }
 
-  getUsers(): Promise<User[]> {
-    return this.userRepository.find();
+  async getUsers(): Promise<any[]> {
+    const snapshot = await this.db.collection(this.collectionName).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
-  getUserById(identification: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { identification } });
+  async getUserById(id: string): Promise<any | null> {
+    const doc = await this.db.collection(this.collectionName).doc(id).get();
+    return doc.exists ? { id: doc.id, ...doc.data() } : null;
   }
 
-  deleteUser(identification: string): Promise<DeleteResult> {
-    return this.userRepository.delete({ identification });
+  async deleteUser(id: string): Promise<boolean> {
+    await this.db.collection(this.collectionName).doc(id).delete();
+    return true;
   }
 
-  updateUser(
-    identification: string,
-    user: UpdateUserDto,
-  ): Promise<UpdateResult> {
-    return this.userRepository.update({ identification }, user);
+  async updateUser(id: string, user: UpdateUserDto): Promise<boolean> {
+    await this.db
+      .collection(this.collectionName)
+      .doc(id)
+      .update(user as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>);
+    return true;
   }
 }
