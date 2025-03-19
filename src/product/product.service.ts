@@ -1,35 +1,38 @@
-import { Product } from './product.entity';
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DeleteResult, Repository, UpdateResult } from 'typeorm';
+import admin from 'firebase.config'; // Asegúrate de ajustar la ruta
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class ProductService {
-  constructor(
-    @InjectRepository(Product)
-    private productRepository: Repository<Product>,
-  ) {}
+  private db = admin.firestore();
+  private collectionName = 'products';
 
-  createProduct(product: CreateProductDto): Promise<Product> {
-    const newProduct = this.productRepository.create(product);
-    return this.productRepository.save(newProduct);
+  async createProduct(product: CreateProductDto): Promise<any> {
+    const docRef = this.db.collection(this.collectionName).doc(); // Se genera un ID automáticamente
+    await docRef.set(product);
+    return { id: docRef.id, ...product };
   }
 
-  getProducts(): Promise<Product[]> {
-    return this.productRepository.find();
+  async getProducts(): Promise<any[]> {
+    const snapshot = await this.db.collection(this.collectionName).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
-  getProductById(id: number): Promise<Product | null> {
-    return this.productRepository.findOne({ where: { id } });
+  async getProductById(id: string): Promise<any | null> {
+    const doc = await this.db.collection(this.collectionName).doc(id).get();
+    return doc.exists ? { id: doc.id, ...doc.data() } : null;
   }
 
-  deleteProduct(id: number): Promise<DeleteResult> {
-    return this.productRepository.delete({ id });
+  async deleteProduct(id: string): Promise<boolean> {
+    await this.db.collection(this.collectionName).doc(id).delete();
+    return true;
   }
 
-  updateProduct(id: number, product: UpdateProductDto): Promise<UpdateResult> {
-    return this.productRepository.update({ id }, product);
+  async updateProduct(id: string, product: UpdateProductDto): Promise<boolean> {
+    await this.db.collection(this.collectionName).doc(id).update(
+      product as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>
+    );
+    return true;
   }
 }

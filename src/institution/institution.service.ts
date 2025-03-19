@@ -1,38 +1,39 @@
-import { Institution } from 'src/institution/institution.entity';
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DeleteResult, Repository, UpdateResult } from 'typeorm';
+import admin from 'firebase.config';
 import { CreateInstitutionDto } from './dto/create-institution.dto';
 import { UpdateInstitutionDto } from './dto/update-institution.dto';
 
 @Injectable()
 export class InstitutionService {
-  constructor(
-    @InjectRepository(Institution)
-    private institutionRepository: Repository<Institution>,
-  ) {}
+  private db = admin.firestore();
+  private collectionName = 'institutions';
 
-  createInstitution(institution: CreateInstitutionDto): Promise<Institution> {
-    const newInstitution = this.institutionRepository.create(institution);
-    return this.institutionRepository.save(newInstitution);
+  async createInstitution(institution: CreateInstitutionDto): Promise<any> {
+    const docRef = this.db.collection(this.collectionName).doc();
+    await docRef.set(institution);
+    return { id: docRef.id, ...institution };
   }
 
-  getInstitutions(): Promise<Institution[]> {
-    return this.institutionRepository.find();
+  async getInstitutions(): Promise<any[]> {
+    const snapshot = await this.db.collection(this.collectionName).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
-  getInstitutionById(id: number): Promise<Institution | null> {
-    return this.institutionRepository.findOne({ where: { id } });
+  async getInstitutionById(id: string): Promise<any | null> {
+    const doc = await this.db.collection(this.collectionName).doc(id).get();
+    return doc.exists ? { id: doc.id, ...doc.data() } : null;
   }
 
-  deleteInstitution(id: number): Promise<DeleteResult> {
-    return this.institutionRepository.delete({ id });
+  async deleteInstitution(id: string): Promise<boolean> {
+    await this.db.collection(this.collectionName).doc(id).delete();
+    return true;
   }
 
-  updateInstitution(
-    id: number,
-    institution: UpdateInstitutionDto,
-  ): Promise<UpdateResult> {
-    return this.institutionRepository.update({ id }, institution);
+  async updateInstitution(id: string, institution: UpdateInstitutionDto): Promise<boolean> {
+    await this.db
+      .collection(this.collectionName)
+      .doc(id)
+      .update(institution as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>);
+    return true;
   }
 }

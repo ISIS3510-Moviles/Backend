@@ -1,4 +1,5 @@
 export class CreateVisitDto {
   date: Date;
-  time: string;
+  visitorId: string;
+  vendorId: string;
 }

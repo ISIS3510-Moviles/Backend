@@ -1,8 +1,14 @@
+
 export class CreateProductDto {
-   id: number;
-   name: string;
-   description: string;
-   rating: number;
-   price: number;
-   isAvailable: boolean;
+  name: string;
+  description: string;
+  price: number;
+  photo: string;
+  restaurant_id: string;
+  rating?: number;
+  ingredientsIds?: string[]; 
+  discountsIds?: string[];       
+  commentsIds?: string[];
+  foodTagIds?: string[];
+  dietaryTagIds?: string[];
 }

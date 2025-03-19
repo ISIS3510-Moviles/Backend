@@ -1,10 +1,9 @@
-import {
+import { 
   Body,
   Controller,
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
 } from '@nestjs/common';
@@ -27,18 +26,18 @@ export class AlertController {
   }
 
   @Get(':id')
-  getAlertById(@Param('id', ParseIntPipe) id: number) {
+  getAlertById(@Param('id') id: string) { // Firestore usa string como ID
     return this.alertService.getAlertById(id);
   }
 
   @Delete(':id')
-  deleteAlertById(@Param('id', ParseIntPipe) id: number) {
+  deleteAlertById(@Param('id') id: string) {
     return this.alertService.deleteAlert(id);
   }
 
   @Patch(':id')
   updateAlertById(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateAlertDto: UpdateAlertDto,
   ) {
     return this.alertService.updateAlert(id, updateAlertDto);

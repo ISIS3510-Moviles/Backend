@@ -1,4 +1,27 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateRestaurantDto } from './create-restaurant.dto';
-
-export class UpdateRestaurantDto extends PartialType(CreateRestaurantDto) {}
+export class UpdateRestaurantDto {
+  name?: string;
+  description?: string;
+  latitude?: number;
+  longitude?: number;
+  routeIndications?: string;
+  openingTime?: Date;
+  closingTime?: Date;
+  opensHolidays?: boolean;
+  opensWeekends?: boolean;
+  rating?: number;
+  isActive?: boolean;
+  address?: string;
+  phone?: string;
+  email?: string;
+  overviewPhoto?: string;
+  profilePhoto?: string;
+  photos?: string[];
+  foodTagsIds?: string[];
+  dietaryTagsIds?: string[];
+  alertsIds?: string[];
+  reservationsIds?: string[];
+  suscribersIds?: string[];
+  visitsIds?: string[];
+  commentsIds?: string[];
+  productsIds?: string[];
+}

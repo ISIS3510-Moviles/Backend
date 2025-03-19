@@ -1,7 +1,6 @@
 export class CreateRestaurantDto {
   name: string;
   description: string;
-  rating: number;
   latitude: number;
   longitude: number;
   routeIndications: string;
@@ -10,4 +9,19 @@ export class CreateRestaurantDto {
   opensHolidays: boolean;
   opensWeekends: boolean;
   isActive: boolean;
+  rating?: number;
+  address?: string;
+  phone?: string;
+  email?: string;
+  overviewPhoto?: string;
+  profilePhoto?: string;
+  photos?: string[];
+  foodTagsIds?: string[];
+  dietaryTagsIds?: string[];
+  alertsIds?: string[];
+  reservationsIds?: string[];
+  suscribersIds?: string[];
+  visitsIds?: string[];
+  commentsIds?: string[];
+  productsIds?: string[];
 }

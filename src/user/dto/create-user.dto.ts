@@ -1,8 +1,17 @@
-import { UserRole } from "../user.entity";
-
 export class CreateUserDto {
   name: string;
-  role: UserRole;
-  phoneNumber: string;
+  phone: string;
+  email: string;
+  role: string;
   isPremium: boolean;
+  badgesIds?: string[];
+  schedulesIds?: string[];
+  reservationsIds?: string[];
+  institutionId: string;
+  dietaryPreferencesTagIds?: string[];
+  commentsIds?: string[];
+  visitsIds?: string[];
+  suscribedRestaurantIds?: string[];
+  publishedAlertsIds?: string[];
+  savedProductsIds?: string[];
 }

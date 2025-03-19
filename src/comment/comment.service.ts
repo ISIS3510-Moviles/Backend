@@ -1,35 +1,39 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Comment } from './comment.entity';
-import { DeleteResult, Repository, UpdateResult } from 'typeorm';
+import admin from 'firebase.config'; 
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 
 @Injectable()
 export class CommentService {
-  constructor(
-    @InjectRepository(Comment)
-    private commentRepository: Repository<Comment>,
-  ) {}
+  private db = admin.firestore();  
+  private collectionName = 'comments';
 
-  createComment(comment: CreateCommentDto): Promise<Comment> {
-    const newComment = this.commentRepository.create(comment);
-    return this.commentRepository.save(newComment);
+  async createComment(comment: CreateCommentDto): Promise<any> {
+    const commentRef = this.db.collection(this.collectionName).doc();
+    await commentRef.set(comment);
+    return { id: commentRef.id, ...comment };
   }
 
-  getComments(): Promise<Comment[]> {
-    return this.commentRepository.find();
+  async getComments(): Promise<any[]> {
+    const snapshot = await this.db.collection(this.collectionName).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
-  getCommentById(id: number): Promise<Comment | null> {
-    return this.commentRepository.findOne({ where: { id } });
+  async getCommentById(id: string): Promise<any | null> {
+    const doc = await this.db.collection(this.collectionName).doc(id).get();
+    return doc.exists ? { id: doc.id, ...doc.data() } : null;
   }
 
-  deleteComment(id: number): Promise<DeleteResult> {
-    return this.commentRepository.delete({ id });
+  async deleteComment(id: string): Promise<boolean> {
+    await this.db.collection(this.collectionName).doc(id).delete();
+    return true;
   }
 
-  updateComment(id: number, comment: UpdateCommentDto): Promise<UpdateResult> {
-    return this.commentRepository.update({ id }, comment);
+  async updateComment(id: string, comment: UpdateCommentDto): Promise<boolean> {
+    await this.db
+      .collection(this.collectionName)
+      .doc(id)
+      .update(comment as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>);
+    return true;
   }
 }

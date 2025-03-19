@@ -1,35 +1,41 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Visit } from './visit.entity';
-import { DeleteResult, Repository, UpdateResult } from 'typeorm';
+import admin from 'firebase.config';
 import { CreateVisitDto } from './dto/create-visit.dto';
 import { UpdateVisitDto } from './dto/update-visit.dto';
 
 @Injectable()
 export class VisitService {
-  constructor(
-    @InjectRepository(Visit)
-    private visitRepository: Repository<Visit>,
-  ) {}
+  private db = admin.firestore();
+  
+  private collectionName = 'visits';
 
-  createVisit(visit: CreateVisitDto): Promise<Visit> {
-    const newVisit = this.visitRepository.create(visit);
-    return this.visitRepository.save(newVisit);
+
+  async createVisit(visit: CreateVisitDto): Promise<any> {
+    const docRef = this.db.collection(this.collectionName).doc(); // Genera un ID automáticamente
+    await docRef.set(visit);
+    return { id: docRef.id, ...visit };
   }
 
-  getVisits(): Promise<Visit[]> {
-    return this.visitRepository.find();
+  async getVisits(): Promise<any[]> {
+    const snapshot = await this.db.collection(this.collectionName).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
-  getVisitById(id: number): Promise<Visit | null> {
-    return this.visitRepository.findOne({ where: { id } });
+  async getVisitById(id: string): Promise<any | null> {
+    const doc = await this.db.collection(this.collectionName).doc(id).get();
+    return doc.exists ? { id: doc.id, ...doc.data() } : null;
   }
 
-  deleteVisit(id: number): Promise<DeleteResult> {
-    return this.visitRepository.delete({ id });
+  async deleteVisit(id: string): Promise<boolean> {
+    await this.db.collection(this.collectionName).doc(id).delete();
+    return true;
   }
 
-  updateVisit(id: number, visit: UpdateVisitDto): Promise<UpdateResult> {
-    return this.visitRepository.update({ id }, visit);
+  async updateVisit(id: string, visit: UpdateVisitDto): Promise<boolean> {
+    await this.db
+      .collection(this.collectionName)
+      .doc(id)
+      .update(visit as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>);
+    return true;
   }
 }
