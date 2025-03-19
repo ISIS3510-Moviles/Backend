@@ -9,18 +9,20 @@ import { ReservationModule } from './reservation/reservation.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TagModule } from './tag/tag.module';
 import { PhotoModule } from './photo/photo.module';
+import { InstitutionModule } from './institution/institution.module';
 
 @Module({
   imports: [
-    ProductModule,
-    CommentModule,
-    UserModule,
-    RestaurantModule,
-    VisitModule,
     AlertModule,
-    ReservationModule,
-    TagModule,
+    CommentModule,
+    InstitutionModule,
     PhotoModule,
+    ProductModule,
+    ReservationModule,
+    RestaurantModule,
+    TagModule,
+    UserModule,
+    VisitModule,
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: 'database.sqlite',
