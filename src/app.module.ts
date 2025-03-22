@@ -20,9 +20,11 @@ import { IngredientModule } from './ingredient/ingredient.module';
 import { ReportModule } from './report/report.module';
 import { FoodTagModule } from './food-tag/food-tag.module';
 import { DietaryTagModule } from './dietary-tag/dietary-tag.module';
+import { AuthModule } from './auth.module';
 
 @Module({
   imports: [
+    AuthModule,
     AlertModule,
     BadgeModule,
     CampusBuildingModule,
