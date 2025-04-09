@@ -18,6 +18,7 @@ export class CommentController {
     if (restaurantId) {
       return this.commentService.getCommentsByRestaurantId(restaurantId);
     }
+    return this.commentService.getComments();
   }
 
 

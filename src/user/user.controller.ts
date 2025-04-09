@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Controller, Get, NotFoundException, Param, Post, Body, Delete, Patch } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -17,9 +17,29 @@ export class UserController {
     return this.userService.getUsers();
   }
 
-  @Get(':identification')
-  getUserById(@Param('identification') identification: string) {
-    return this.userService.getUserById(identification);
+  @Get('tag/:identification')
+  async getUserTagById(@Param('identification') identification: string) {
+    const userTag = await this.userService.getUserTagById(identification);
+    if (!userTag) {
+      throw new NotFoundException(`User with ID ${identification} not found`);
+    }
+    return userTag;
+  }
+
+
+  @Get('tag')
+  async getUsersTag() {
+    return await this.userService.getUsersTag();
+  }
+
+  @Get(':id')
+  getUserById(@Param('id') id: string) {
+    return this.userService.getUserById(id);
+  }  
+
+  @Get('full/:id')
+  getUserByIdFull(@Param('id') id: string) {
+    return this.userService.getUserByIdFull(id);
   }
 
   @Delete(':identification')

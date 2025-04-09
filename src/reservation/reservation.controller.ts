@@ -27,6 +27,11 @@ export class ReservationController {
     return this.reservationService.deleteReservation(id);
   }
 
+  @Delete('all')
+  deleteReservations() {
+    return this.reservationService.deleteAllReservations();
+  }
+
   @Patch(':id')
   updateReservationById(
     @Param('id') id: string,
