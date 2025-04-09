@@ -1,3 +1,4 @@
+
 import {
   Body,
   Controller,
@@ -8,6 +9,7 @@ import {
   Post,
   NotFoundException,
 } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { RestaurantService } from './restaurant.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
@@ -31,10 +33,12 @@ export class RestaurantController {
     return this.restaurantService.getRestaurantsFull();
   }
 
+
   @Get(':id')
   getRestaurantById(@Param('id') id: string) {
     return this.restaurantService.getRestaurantById(id);
   }
+
 
   @Get('full/:id')
   async getRestaurantFullById(@Param('id') id: string) {
@@ -50,6 +54,7 @@ export class RestaurantController {
     return this.restaurantService.buildRestaurantSmart(simulatedDoc);
   }
 
+
   @Delete(':id')
   deleteRestaurantById(@Param('id') id: string) {
     return this.restaurantService.deleteRestaurant(id);
@@ -62,6 +67,7 @@ export class RestaurantController {
   ) {
     return this.restaurantService.updateRestaurant(id, updateRestaurantDto);
   }
+
 
   @Get('by-food-tag/:tagId')
   getRestaurantsByFoodTag(@Param('tagId') tagId: string) {

@@ -8,7 +8,6 @@ export class ReservationService {
   private db = admin.firestore();
   private collectionName = 'reservations';
 
-
   async createReservation(reservation: CreateReservationDto): Promise<any> {
     const docRef = this.db.collection(this.collectionName).doc();
     await docRef.set(reservation);
@@ -36,7 +35,6 @@ export class ReservationService {
     );
     return true;
   }
-
   async deleteAllReservations(): Promise<boolean> {
     const snapshot = await this.db.collection(this.collectionName).get();
 
@@ -48,4 +46,5 @@ export class ReservationService {
     await batch.commit();
     return true;
   }
+
 }

@@ -19,6 +19,7 @@ export class CommentService {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
+
   async getCommentsByRestaurantId(restaurantId: string): Promise<any[]> {
     const snapshot = await this.db
       .collection(this.collectionName)
@@ -26,6 +27,7 @@ export class CommentService {
       .get();
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   }
+
 
   async getCommentById(id: string): Promise<any | null> {
     const doc = await this.db.collection(this.collectionName).doc(id).get();

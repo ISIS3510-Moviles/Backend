@@ -3,6 +3,7 @@ import admin from 'firebase.config';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 
+
 export interface Restaurant {
   id: string;
   name: string;
@@ -43,6 +44,7 @@ export interface Subscriber {
   name: string;
 }
 
+
 @Injectable()
 export class RestaurantService {
   private db = admin.firestore();
@@ -56,6 +58,7 @@ export class RestaurantService {
 
   async getRestaurants(): Promise<any[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
+
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   }
 
@@ -147,6 +150,8 @@ export class RestaurantService {
       snapshot.docs.map((doc) => this.buildRestaurantSmart(doc)),
     );
     return restaurants;
+
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
   async getRestaurantById(id: string): Promise<any | null> {
@@ -158,7 +163,6 @@ export class RestaurantService {
     await this.db.collection(this.collectionName).doc(id).delete();
     return true;
   }
-
   async updateRestaurant(
     id: string,
     restaurant: UpdateRestaurantDto,
@@ -182,5 +186,12 @@ export class RestaurantService {
       snapshot.docs.map((doc) => this.buildRestaurantSmart(doc)),
     );
     return restaurants;
+  }
+
+  async updateRestaurant(id: string, restaurant: UpdateRestaurantDto): Promise<boolean> {
+    await this.db.collection(this.collectionName)
+      .doc(id)
+      .update(restaurant as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>);
+    return true;
   }
 }
