@@ -8,10 +8,9 @@ export class ReservationService {
   private db = admin.firestore();
   private collectionName = 'reservations';
 
-  
 
   async createReservation(reservation: CreateReservationDto): Promise<any> {
-    const docRef = this.db.collection(this.collectionName).doc(); // Genera un ID automáticamente
+    const docRef = this.db.collection(this.collectionName).doc();
     await docRef.set(reservation);
     return { id: docRef.id, ...reservation };
   }
@@ -35,6 +34,18 @@ export class ReservationService {
     await this.db.collection(this.collectionName).doc(id).update(
       reservation as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>
     );
+    return true;
+  }
+
+  async deleteAllReservations(): Promise<boolean> {
+    const snapshot = await this.db.collection(this.collectionName).get();
+
+    const batch = this.db.batch();
+    snapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
     return true;
   }
 }
