@@ -150,8 +150,6 @@ export class RestaurantService {
       snapshot.docs.map((doc) => this.buildRestaurantSmart(doc)),
     );
     return restaurants;
-
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
   async getRestaurantById(id: string): Promise<any | null> {
@@ -186,12 +184,5 @@ export class RestaurantService {
       snapshot.docs.map((doc) => this.buildRestaurantSmart(doc)),
     );
     return restaurants;
-  }
-
-  async updateRestaurant(id: string, restaurant: UpdateRestaurantDto): Promise<boolean> {
-    await this.db.collection(this.collectionName)
-      .doc(id)
-      .update(restaurant as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>);
-    return true;
   }
 }
