@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
@@ -13,9 +14,12 @@ export class CommentController {
   }
 
   @Get()
-  getComments() {
-    return this.commentService.getComments();
+  getComments(@Query('restaurantId') restaurantId?: string) {
+    if (restaurantId) {
+      return this.commentService.getCommentsByRestaurantId(restaurantId);
+    }
   }
+
 
   @Get(':id')
   getCommentById(@Param('id') id: string) {

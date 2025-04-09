@@ -19,6 +19,16 @@ export class CommentService {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
+
+  async getCommentsByRestaurantId(restaurantId: string): Promise<any[]> {
+    const snapshot = await this.db
+      .collection(this.collectionName)
+      .where('restaurantId', '==', restaurantId)
+      .get();
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  }
+
+
   async getCommentById(id: string): Promise<any | null> {
     const doc = await this.db.collection(this.collectionName).doc(id).get();
     return doc.exists ? { id: doc.id, ...doc.data() } : null;
