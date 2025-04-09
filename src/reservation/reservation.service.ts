@@ -25,7 +25,9 @@ export class ReservationService {
   }
 
   async deleteReservation(id: string): Promise<boolean> {
+    console.log(`Intentando borrar la reserva con id: ${id}`);
     await this.db.collection(this.collectionName).doc(id).delete();
+    console.log(`Reserva con id ${id} borrada correctamente`);
     return true;
   }
 
@@ -36,14 +38,17 @@ export class ReservationService {
     return true;
   }
   async deleteAllReservations(): Promise<boolean> {
-    const snapshot = await this.db.collection(this.collectionName).get();
-
-    const batch = this.db.batch();
-    snapshot.docs.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-
-    await batch.commit();
+    const collectionRef = this.db.collection(this.collectionName);
+    let snapshot = await collectionRef.limit(500).get();
+  
+    while (!snapshot.empty) {
+      const batch = this.db.batch();
+      snapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      snapshot = await collectionRef.limit(500).get();
+    }
     return true;
   }
 

@@ -42,12 +42,6 @@ import { AuthModule } from './auth.module';
     DietaryTagModule,
     UserModule,
     VisitModule,
-    TypeOrmModule.forRoot({
-      type: 'sqlite',
-      database: 'database.sqlite',
-      entities: ['dist/**/*.entity{.ts,.js}'],
-      synchronize: true,
-    }),
   ],
   controllers: [AppController],
   providers: [AppService, FirebaseService], 
