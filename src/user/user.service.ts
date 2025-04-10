@@ -75,8 +75,6 @@ export class UserService {
 
   async updateUser(id: string, user: UpdateUserDto): Promise<boolean> {
     try {
-      console.log('🔧 Actualizando usuario:', id);
-      console.log('📦 Data recibida:', user);
   
       await this.db
         .collection(this.collectionName)
@@ -85,10 +83,8 @@ export class UserService {
           user as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>,
         );
   
-      console.log('✅ Usuario actualizado correctamente');
       return true;
     } catch (error) {
-      console.error('❌ Error actualizando el usuario:', error);
       throw new Error('Error actualizando el usuario: ' + error.message);
     }
   }
