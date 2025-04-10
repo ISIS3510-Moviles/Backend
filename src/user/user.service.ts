@@ -11,7 +11,6 @@ export class UserService {
   async createUser(user: CreateUserDto): Promise<any> {
     const docRef = this.db.collection(this.collectionName).doc();
     await docRef.set(user);
-    // Elimina la propiedad id del objeto user antes de expandirlo
     const { id, ...userData } = user;
     return { id: docRef.id, ...userData };
   }
@@ -27,7 +26,6 @@ export class UserService {
     } else {
       const docRef = this.db.collection(this.collectionName).doc();
       await docRef.set(user);
-      // Elimina la propiedad id del objeto user antes de expandirlo
       const { id, ...userData } = user;
       return { id: docRef.id, ...userData };
     }
