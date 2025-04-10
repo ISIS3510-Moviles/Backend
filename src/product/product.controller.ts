@@ -34,4 +34,9 @@ export class ProductController {
   ) {
     return this.productService.updateProduct(id, updateProductDto);
   }
+
+  @Get('by-food-tag/:tagId')
+  getProductsByFoodTag(@Param('tagId') tagId: string) {
+    return this.productService.getProductsByFoodTag(tagId);
+  }
 }

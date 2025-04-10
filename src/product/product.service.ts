@@ -35,11 +35,23 @@ export class ProductService {
     await this.db.collection(this.collectionName).doc(id).delete();
     return true;
   }
-
   async updateProduct(id: string, product: UpdateProductDto): Promise<boolean> {
     await this.db.collection(this.collectionName).doc(id).update(
       product as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>
     );
     return true;
+  }
+  async getProductsByFoodTag(tagId: string): Promise<{ tagName: string | null; products: any[] }> {
+    const tagDoc = await this.db.collection('foodTags').doc(tagId).get();
+    const tagName = tagDoc.exists ? tagDoc.data()?.name : null;
+  
+    const snapshot = await this.db
+      .collection(this.collectionName)
+      .where('foodTagsIds', 'array-contains', tagId)
+      .get();
+  
+    const products = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  
+    return { tagName, products };
   }
 }
