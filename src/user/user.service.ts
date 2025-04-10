@@ -2,17 +2,32 @@ import { Injectable } from '@nestjs/common';
 import admin from 'firebase.config';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
+
+
 
 @Injectable()
 export class UserService {
   private db = admin.firestore();
   private collectionName = 'users';
 
+  constructor(private readonly httpService: HttpService) {}
+
+
   async createUser(user: CreateUserDto): Promise<any> {
     const docRef = this.db.collection(this.collectionName).doc();
     await docRef.set(user);
     const { id, ...userData } = user;
     return { id: docRef.id, ...userData };
+  }
+
+  async getRecommendations(userId: string): Promise<any> {
+    const url = 'http://34.44.23.243:8000/recommend';
+    const response = await firstValueFrom(
+      this.httpService.post(url, { user_id: userId })
+    );
+    return response.data;
   }
   
   async createUserCheck(user: CreateUserDto): Promise<any> {

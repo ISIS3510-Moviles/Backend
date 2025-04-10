@@ -59,4 +59,9 @@ export class UserController {
   ) {
     return this.userService.updateUser(identification, updateUserDto);
   }
+
+  @Post('recommend')
+  async recommend(@Body('user_id') userId: string) {
+    return this.userService.getRecommendations(userId);
+  }
 }
