@@ -12,6 +12,11 @@ export class UserController {
     return this.userService.createUser(createUserDto);
   }
 
+  @Post('check')
+  createUserCheck(@Body() createUserDto: CreateUserDto) {
+    return this.userService.createUserCheck(createUserDto);
+  }
+
   @Get()
   getUsers() {
     return this.userService.getUsers();
