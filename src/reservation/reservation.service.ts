@@ -14,6 +14,15 @@ export class ReservationService {
     return { id: docRef.id, ...reservation };
   }
 
+  async getReservationsByUserId(userId: string): Promise<any[]> {
+    const snapshot = await this.db
+      .collection(this.collectionName)
+      .where('user_id', '==', userId) // Filtra por el campo 'user_id'
+      .get();
+  
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  }
+
   async getReservations(): Promise<any[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));

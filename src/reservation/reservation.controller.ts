@@ -17,6 +17,11 @@ export class ReservationController {
     return this.reservationService.getReservations();
   }
 
+  @Get('by-user/:userId')
+  getReservationsByUserId(@Param('userId') userId: string) {
+    return this.reservationService.getReservationsByUserId(userId);
+  }
+
   @Get(':id')
   getReservationById(@Param('id') id: string) {
     return this.reservationService.getReservationById(id);
