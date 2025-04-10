@@ -27,7 +27,10 @@ export class RestaurantController {
     return this.restaurantService.getRestaurants(nameMatch);
   }
 
-  
+  @Get('tags')
+  getRestaurantsTagsJoin(@Query('nameMatch') nameMatch?: string) {
+    return this.restaurantService.getRestaurantsTagsJoin(nameMatch);
+  }
 
   @Get('full')
   getRestaurantsFull() {

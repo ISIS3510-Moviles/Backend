@@ -36,6 +36,7 @@ export interface RestaurantSmart {
   rating: number;
   comments: any[];
   reservations: any[];
+  profilePhoto: string;
   subscribers: Subscriber[];
 }
 
@@ -66,6 +67,28 @@ export class RestaurantService {
       );
     }
     return restaurants;
+  }
+
+  async getRestaurantsTagsJoin(nameMatch?: string): Promise<any[]> {
+    const snapshot = await this.db.collection(this.collectionName).get();
+    let restaurants = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as any);
+    if (nameMatch && nameMatch.trim() !== '') {
+      const match = nameMatch.toLowerCase();
+      restaurants = restaurants.filter(
+        (restaurant) =>
+          restaurant.name && restaurant.name.toLowerCase().includes(match),
+      );
+    }
+    const restaurantsWithTags = await Promise.all(
+      restaurants.map(async (restaurant) => {
+        const foodTags = await this.fetchTags(restaurant.foodTagsIds, 'foodTags');
+        const dietaryTags = await this.fetchTags(restaurant.dietaryTagsIds, 'dietaryTags');
+        const tags = [...foodTags, ...dietaryTags];
+        return { ...restaurant, tags };
+      }),
+    );
+  
+    return restaurantsWithTags;
   }
 
   private async fetchTags(
@@ -143,6 +166,7 @@ export class RestaurantService {
       id: doc.id,
       name: data.name,
       tags,
+      profilePhoto: data.profilePhoto,
       rating: data.rating || 0,
       comments,
       reservations,
