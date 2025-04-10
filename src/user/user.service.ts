@@ -9,13 +9,13 @@ export class UserService {
   private collectionName = 'users';
 
   async createUser(user: CreateUserDto): Promise<any> {
-    const docRef = this.db.collection(this.collectionName).doc(user.id);
+    const docRef = this.db.collection(this.collectionName).doc();
     await docRef.set(user);
-    return { ...user };
+    // Elimina la propiedad id del objeto user antes de expandirlo
+    const { id, ...userData } = user;
+    return { id: docRef.id, ...userData };
   }
   
-  
-
   async createUserCheck(user: CreateUserDto): Promise<any> {
     const snapshot = await this.db
       .collection(this.collectionName)
@@ -27,7 +27,9 @@ export class UserService {
     } else {
       const docRef = this.db.collection(this.collectionName).doc();
       await docRef.set(user);
-      return { id: docRef.id, ...user };
+      // Elimina la propiedad id del objeto user antes de expandirlo
+      const { id, ...userData } = user;
+      return { id: docRef.id, ...userData };
     }
   }
 
@@ -89,21 +91,14 @@ export class UserService {
   }
 
   async updateUser(id: string, user: UpdateUserDto): Promise<boolean> {
-    try {
-  
-      await this.db
-        .collection(this.collectionName)
-        .doc(id)
-        .update(
-          user as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>,
-        );
-  
-      return true;
-    } catch (error) {
-      throw new Error('Error actualizando el usuario: ' + error.message);
-    }
+    await this.db
+      .collection(this.collectionName)
+      .doc(id)
+      .update(
+        user as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>,
+      );
+    return true;
   }
-  
 
   private async buildUserTag(
     userDoc: FirebaseFirestore.DocumentSnapshot,
