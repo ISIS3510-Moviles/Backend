@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { RestaurantService } from './restaurant.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
@@ -22,9 +23,11 @@ export class RestaurantController {
   }
 
   @Get()
-  getRestaurants() {
-    return this.restaurantService.getRestaurants();
+  getRestaurants(@Query('nameMatch') nameMatch?: string) {
+    return this.restaurantService.getRestaurants(nameMatch);
   }
+
+  
 
   @Get('full')
   getRestaurantsFull() {

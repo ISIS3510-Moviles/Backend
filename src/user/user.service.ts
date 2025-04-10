@@ -16,6 +16,21 @@ export class UserService {
   
   
 
+  async createUserCheck(user: CreateUserDto): Promise<any> {
+    const snapshot = await this.db
+      .collection(this.collectionName)
+      .where('email', '==', user.email)
+      .get();
+    if (!snapshot.empty) {
+      const userDoc = snapshot.docs[0];
+      return { id: userDoc.id, ...userDoc.data() };
+    } else {
+      const docRef = this.db.collection(this.collectionName).doc();
+      await docRef.set(user);
+      return { id: docRef.id, ...user };
+    }
+  }
+
   async getUsers(): Promise<any[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));

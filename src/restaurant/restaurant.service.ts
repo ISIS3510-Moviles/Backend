@@ -3,7 +3,6 @@ import admin from 'firebase.config';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 
-
 export interface Restaurant {
   id: string;
   name: string;
@@ -44,7 +43,6 @@ export interface Subscriber {
   name: string;
 }
 
-
 @Injectable()
 export class RestaurantService {
   private db = admin.firestore();
@@ -55,11 +53,19 @@ export class RestaurantService {
     await docRef.set(restaurant);
     return { id: docRef.id, ...restaurant };
   }
-
-  async getRestaurants(): Promise<any[]> {
+  async getRestaurants(nameMatch?: string): Promise<any[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
-
-    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    let restaurants = snapshot.docs.map(
+      (doc) => ({ id: doc.id, ...doc.data() }) as any,
+    );
+    if (nameMatch && nameMatch.trim() !== '') {
+      const match = nameMatch.toLowerCase();
+      restaurants = restaurants.filter(
+        (restaurant) =>
+          restaurant.name && restaurant.name.toLowerCase().includes(match),
+      );
+    }
+    return restaurants;
   }
 
   private async fetchTags(
@@ -174,15 +180,18 @@ export class RestaurantService {
     return true;
   }
 
-  async getRestaurantsByFoodTag(tagId: string): Promise<RestaurantSmart[]> {
+  async getRestaurantsByFoodTag(
+    tagId: string,
+  ): Promise<{ tagName: string | null; restaurants: RestaurantSmart[] }> {
+    const tagDoc = await this.db.collection('foodTags').doc(tagId).get();
+    const tagName = tagDoc.exists ? tagDoc.data()?.name : null;
     const snapshot = await this.db
       .collection(this.collectionName)
       .where('foodTagsIds', 'array-contains', tagId)
       .get();
-
     const restaurants = await Promise.all(
       snapshot.docs.map((doc) => this.buildRestaurantSmart(doc)),
     );
-    return restaurants;
+    return { tagName, restaurants };
   }
 }

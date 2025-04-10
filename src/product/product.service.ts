@@ -14,9 +14,16 @@ export class ProductService {
     return { id: docRef.id, ...product };
   }
 
-  async getProducts(): Promise<any[]> {
+  async getProducts(nameMatch?: string): Promise<any[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    let products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+    if (nameMatch && nameMatch.trim() !== '') {
+      const match = nameMatch.toLowerCase();
+      products = products.filter(product =>
+        product.name && product.name.toLowerCase().includes(match),
+      );
+    }
+    return products;
   }
 
   async getProductById(id: string): Promise<any | null> {
