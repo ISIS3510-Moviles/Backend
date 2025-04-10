@@ -14,15 +14,46 @@ export class UserService {
     const { id, ...userData } = user;
     return { id: docRef.id, ...userData };
   }
-  
+
   async createUserCheck(user: CreateUserDto): Promise<any> {
     const snapshot = await this.db
       .collection(this.collectionName)
       .where('email', '==', user.email)
       .get();
+  
     if (!snapshot.empty) {
       const userDoc = snapshot.docs[0];
-      return { id: userDoc.id, ...userDoc.data() };
+      const userData = userDoc.data() as any;
+  
+      let institution: { id: string; [key: string]: any } | null = null; 
+      if (userData.institutionId && userData.institutionId.trim() !== '') {
+        const instDoc = await this.db
+          .collection('institutions')
+          .doc(userData.institutionId)
+          .get();
+        institution = instDoc.exists
+          ? { id: instDoc.id, ...instDoc.data() }
+          : null;
+      }
+      const savedProductsIds: string[] = (
+        userData.savedProductsIds || []
+      ).filter((pid) => pid && pid.trim() !== '');
+      const savedProducts = await Promise.all(
+        savedProductsIds.map(async (pid) => {
+          const productDoc = await this.db.collection('products').doc(pid).get();
+          return productDoc.exists
+            ? { id: productDoc.id, ...productDoc.data() }
+            : null;
+        }),
+      );
+      const filteredSavedProducts = savedProducts.filter((p) => p !== null);
+  
+      return {
+        id: userDoc.id,
+        ...userData,
+        institution,
+        saved_products: filteredSavedProducts,
+      };
     } else {
       const docRef = this.db.collection(this.collectionName).doc();
       await docRef.set(user);
