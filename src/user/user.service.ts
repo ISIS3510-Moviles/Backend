@@ -16,14 +16,15 @@ export class UserService {
 
 
   async createUser(user: CreateUserDto): Promise<any> {
-    const docRef = this.db.collection(this.collectionName).doc();
+    const docRef = this.db.collection(this.collectionName).doc(user.id); 
     await docRef.set(user);
     const { id, ...userData } = user;
     return { id: docRef.id, ...userData };
   }
+  
 
   async getRecommendations(userId: string): Promise<any> {
-    const url = 'http://34.44.23.243:8000/recommend';
+    const url = 'http://35.208.18.145:8000/recommend';
     const response = await firstValueFrom(
       this.httpService.post(url, { user_id: userId })
     );
@@ -136,6 +137,7 @@ export class UserService {
   }
 
   async updateUser(id: string, user: UpdateUserDto): Promise<boolean> {
+    console.log('Updating user:', id, user);
     await this.db
       .collection(this.collectionName)
       .doc(id)
