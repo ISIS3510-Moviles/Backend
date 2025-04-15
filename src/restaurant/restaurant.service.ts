@@ -2,6 +2,37 @@ import { Injectable } from '@nestjs/common';
 import admin from 'firebase.config';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
+import { DocumentSnapshot } from 'firebase-admin/firestore';
+
+
+async function fetchDocumentsByIds(db: FirebaseFirestore.Firestore, collectionName: string, ids: string[]): Promise<Map<string, any>> {
+  const uniqueIds = [...new Set(ids)].filter(id => id);
+  const docMap = new Map<string, any>();
+
+  if (uniqueIds.length === 0) {
+    return docMap;
+  }
+
+
+  const promises: Promise<DocumentSnapshot>[] = uniqueIds.map(id =>
+    db.collection(collectionName).doc(id).get()
+  );
+
+  try {
+    const snapshots = await Promise.all(promises);
+    snapshots.forEach(doc => {
+      if (doc.exists) {
+        docMap.set(doc.id, doc.data());
+      } else {
+        console.warn(`Document with ID ${doc.id} not found in collection ${collectionName}`);
+      }
+    });
+  } catch (error) {
+    console.error(`Error fetching documents from ${collectionName}:`, error);
+
+  }
+  return docMap;
+}
 
 export interface Restaurant {
   id: string;
@@ -54,20 +85,48 @@ export class RestaurantService {
     await docRef.set(restaurant);
     return { id: docRef.id, ...restaurant };
   }
+
   async getRestaurants(nameMatch?: string): Promise<any[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
-    let restaurants = snapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() }) as any,
-    );
-    if (nameMatch && nameMatch.trim() !== '') {
-      const match = nameMatch.toLowerCase();
-      restaurants = restaurants.filter(
-        (restaurant) =>
-          restaurant.name && restaurant.name.toLowerCase().includes(match),
-      );
+    let restaurants = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+
+    if (!nameMatch || nameMatch.trim() === '') {
+      return restaurants;
     }
-    return restaurants;
+
+    const match = nameMatch.toLowerCase().trim();
+
+
+    const allDietaryTagIds = restaurants.flatMap(r => r.dietaryTagsIds || []);
+    const allFoodTagIds = restaurants.flatMap(r => r.foodTagsIds || []);
+
+
+    const [dietaryTagMap, foodTagMap] = await Promise.all([
+      fetchDocumentsByIds(this.db, 'dietaryTags', allDietaryTagIds),
+      fetchDocumentsByIds(this.db, 'foodTags', allFoodTagIds)
+    ]);
+
+
+    const finalFilteredRestaurants = restaurants.filter(restaurant => {
+      const nameMatches = restaurant.name?.toLowerCase().includes(match);
+      const descriptionMatches = restaurant.description?.toLowerCase().includes(match);
+
+
+      const dietaryTagMatches = restaurant.dietaryTagsIds?.some((id: string) =>
+        dietaryTagMap.get(id)?.name?.toLowerCase().includes(match)
+      );
+
+
+      const foodTagMatches = restaurant.foodTagsIds?.some((id: string) =>
+        foodTagMap.get(id)?.name?.toLowerCase().includes(match)
+      );
+
+      return nameMatches || descriptionMatches || dietaryTagMatches || foodTagMatches;
+    });
+
+    return finalFilteredRestaurants;
   }
+
 
   async getRestaurantsTagsJoin(nameMatch?: string): Promise<any[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
@@ -87,7 +146,7 @@ export class RestaurantService {
         return { ...restaurant, tags };
       }),
     );
-  
+
     return restaurantsWithTags;
   }
 
