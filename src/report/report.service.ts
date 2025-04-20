@@ -9,7 +9,6 @@ export class ReportService {
   private collectionName = 'reports';
 
   async createReport(report: CreateReportDto): Promise<any> {
-    // Genera un nuevo documento con un ID automático
     const reportRef = this.db.collection(this.collectionName).doc();
     const reportData = { id: reportRef.id, ...report };
     await reportRef.set(reportData);

@@ -26,7 +26,7 @@ export class AlertController {
   }
 
   @Get(':id')
-  getAlertById(@Param('id') id: string) { // Firestore usa string como ID
+  getAlertById(@Param('id') id: string) { 
     return this.alertService.getAlertById(id);
   }
 

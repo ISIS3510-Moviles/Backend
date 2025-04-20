@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import admin from 'firebase.config'; // Asegúrate de que la ruta sea correcta
+import admin from 'firebase.config';
 import { CreateIngredientDto } from './dto/create-ingredient.dto';
 import { UpdateIngredientDto } from './dto/update-ingredient.dto';
 

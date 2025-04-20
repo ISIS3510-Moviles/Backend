@@ -4,7 +4,8 @@ import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 import { DocumentSnapshot } from 'firebase-admin/firestore';
 
-async function fetchDocumentsByIds(
+
+export async function fetchDocumentsByIds(
   db: FirebaseFirestore.Firestore,
   collectionName: string,
   ids: string[],
@@ -141,15 +142,12 @@ export class RestaurantService {
       (doc) => ({ id: doc.id, ...doc.data() }) as any,
     );
 
-    // Filtrar por nombre si hay coincidencia
     if (nameMatch?.trim()) {
       const match = nameMatch.toLowerCase();
       restaurants = restaurants.filter((restaurant) =>
         restaurant.name?.toLowerCase().includes(match),
       );
     }
-
-    // Obtener tags por restaurante
     const restaurantsWithTags = await Promise.all(
       restaurants.map(async (restaurant) => {
         const foodTags = await this.fetchTags(
@@ -221,49 +219,59 @@ export class RestaurantService {
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   }
 
-  async buildRestaurantSmart(
-    doc: FirebaseFirestore.QueryDocumentSnapshot,
-  ): Promise<RestaurantSmart & Restaurant> {
-    const data = doc.data() as Restaurant;
+async buildRestaurantSmart(
+  doc: FirebaseFirestore.QueryDocumentSnapshot,
+): Promise<RestaurantSmart & Restaurant & { products: any[] }> {
+  const data = doc.data() as Restaurant;
 
-    const foodTags = await this.fetchTags(data.foodTagsIds, 'foodTags');
-    const dietaryTags = await this.fetchTags(
-      data.dietaryTagsIds,
-      'dietaryTags',
-    );
-    const tags = [...foodTags, ...dietaryTags];
 
-    const subscribers = await this.fetchSubscribers(data.suscribersIds);
+  const foodTags = await this.fetchTags(data.foodTagsIds, 'foodTags');
+  const dietaryTags = await this.fetchTags(data.dietaryTagsIds, 'dietaryTags');
+  const tags = [...foodTags, ...dietaryTags];
 
-    const reservations = await this.fetchRelatedDocs(
-      'reservations',
-      'restaurant_id',
-      doc.id,
-    );
+  const subscribers = await this.fetchSubscribers(data.suscribersIds);
 
-    const rawComments = await this.fetchRelatedDocs(
-      'comments',
-      'restaurantId',
-      doc.id,
-    );
 
-    const authorIds = rawComments.map((c) => c.authorId).filter((id) => !!id);
-    const userMap = await fetchDocumentsByIds(this.db, 'users', authorIds);
+  const reservations = await this.fetchRelatedDocs(
+    'reservations',
+    'restaurant_id',
+    doc.id,
+  );
 
-    const comments = rawComments.map((comment) => ({
-      ...comment,
-      authorName: userMap.get(comment.authorId)?.name || 'anonymous',
-    }));
+  const rawComments = await this.fetchRelatedDocs(
+    'comments',
+    'restaurantId',
+    doc.id,
+  );
 
-    return {
-      ...data,
-      id: doc.id,
-      tags,
-      subscribers,
-      reservations,
-      comments,
-    };
-  }
+  const authorIds = rawComments.map((c) => c.authorId).filter((id) => !!id);
+  const userMap = await fetchDocumentsByIds(this.db, 'users', authorIds);
+
+  const comments = rawComments.map((comment) => ({
+    ...comment,
+    authorName: userMap.get(comment.authorId)?.name || 'anonymous',
+  }));
+
+  const productsSnapshot = await this.db
+    .collection('products')
+    .where('restaurant_id', '==', doc.id)
+    .get();
+
+  const products = productsSnapshot.docs.map((productDoc) => ({
+    id: productDoc.id,
+    ...productDoc.data(),
+  }));
+
+  return {
+    ...data,
+    id: doc.id,
+    tags,
+    subscribers,
+    reservations,
+    comments,
+    products,
+  };
+}
 
   async getRestaurantsFull(): Promise<RestaurantSmart[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
