@@ -22,6 +22,13 @@ export class ProductController {
     return this.productService.getProductById(id);
   }
 
+  
+  @Get('full/:id')
+  getProductByIdFull(@Param('id') id: string) {
+    return this.productService.getProductByIdFull(id);
+  }
+
+
   @Delete(':id')
   deleteProductById(@Param('id') id: string) {
     return this.productService.deleteProduct(id);

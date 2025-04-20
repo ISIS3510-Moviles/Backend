@@ -1,37 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import admin from 'firebase.config'; // Asegúrate de ajustar la ruta
+import admin from 'firebase.config';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { DocumentSnapshot } from 'firebase-admin/firestore';
-
-async function fetchDocumentsByIds(db: FirebaseFirestore.Firestore, collectionName: string, ids: string[]): Promise<Map<string, any>> {
-  const uniqueIds = [...new Set(ids)].filter(id => id);
-  const docMap = new Map<string, any>();
-
-  if (uniqueIds.length === 0) {
-    return docMap;
-  }
-
-
-  const promises: Promise<DocumentSnapshot>[] = uniqueIds.map(id =>
-    db.collection(collectionName).doc(id).get()
-  );
-
-  try {
-    const snapshots = await Promise.all(promises);
-    snapshots.forEach(doc => {
-      if (doc.exists) {
-        docMap.set(doc.id, doc.data());
-      } else {
-        console.warn(`Document with ID ${doc.id} not found in collection ${collectionName}`);
-      }
-    });
-  } catch (error) {
-    console.error(`Error fetching documents from ${collectionName}:`, error);
-
-  }
-  return docMap;
-}
+import { fetchDocumentsByIds } from 'src/restaurant/restaurant.service';
 
 @Injectable()
 export class ProductService {
@@ -39,61 +11,116 @@ export class ProductService {
   private collectionName = 'products';
 
   async createProduct(product: CreateProductDto): Promise<any> {
-    const docRef = this.db.collection(this.collectionName).doc(); // Se genera un ID automáticamente
+    const docRef = this.db.collection(this.collectionName).doc();
     await docRef.set(product);
     return { id: docRef.id, ...product };
   }
 
   async getProducts(nameMatch?: string): Promise<any[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
-    let products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
-  
+    let products = snapshot.docs.map(
+      (doc) => ({ id: doc.id, ...doc.data() }) as any,
+    );
+
     if (!nameMatch || nameMatch.trim() === '') {
       return products;
     }
-  
+
     const match = nameMatch.toLowerCase().trim();
-  
-    const initialFilteredProducts = products.filter(product =>
-      (product.name && product.name.toLowerCase().includes(match)) ||
-      (product.description && product.description.toLowerCase().includes(match))
+
+    const initialFilteredProducts = products.filter(
+      (product) =>
+        (product.name && product.name.toLowerCase().includes(match)) ||
+        (product.description &&
+          product.description.toLowerCase().includes(match)),
     );
-  
-    const allIngredientIds = products.flatMap(p => p.ingredientsIds || []);
-    const allDietaryTagIds = products.flatMap(p => p.dietaryTagsIds || []);
-    const allFoodTagIds = products.flatMap(p => p.foodTagsIds || []);
-  
+
+    const allIngredientIds = products.flatMap((p) => p.ingredientsIds || []);
+    const allDietaryTagIds = products.flatMap((p) => p.dietaryTagsIds || []);
+    const allFoodTagIds = products.flatMap((p) => p.foodTagsIds || []);
+
     const [ingredientMap, dietaryTagMap, foodTagMap] = await Promise.all([
       fetchDocumentsByIds(this.db, 'ingredients', allIngredientIds),
       fetchDocumentsByIds(this.db, 'dietaryTags', allDietaryTagIds),
-      fetchDocumentsByIds(this.db, 'foodTags', allFoodTagIds)
+      fetchDocumentsByIds(this.db, 'foodTags', allFoodTagIds),
     ]);
-  
-    const finalFilteredProducts = products.filter(product => {
+
+    const finalFilteredProducts = products.filter((product) => {
       const nameMatches = product.name?.toLowerCase().includes(match);
-      const descriptionMatches = product.description?.toLowerCase().includes(match);
-  
+      const descriptionMatches = product.description
+        ?.toLowerCase()
+        .includes(match);
+
       const ingredientMatches = product.ingredientsIds?.some((id: string) =>
-        ingredientMap.get(id)?.name?.toLowerCase().includes(match)
+        ingredientMap.get(id)?.name?.toLowerCase().includes(match),
       );
-  
+
       const dietaryTagMatches = product.dietaryTagsIds?.some((id: string) =>
-        dietaryTagMap.get(id)?.name?.toLowerCase().includes(match)
+        dietaryTagMap.get(id)?.name?.toLowerCase().includes(match),
       );
-  
+
       const foodTagMatches = product.foodTagsIds?.some((id: string) =>
-        foodTagMap.get(id)?.name?.toLowerCase().includes(match)
+        foodTagMap.get(id)?.name?.toLowerCase().includes(match),
       );
-  
-      return nameMatches || descriptionMatches || ingredientMatches || dietaryTagMatches || foodTagMatches;
+
+      return (
+        nameMatches ||
+        descriptionMatches ||
+        ingredientMatches ||
+        dietaryTagMatches ||
+        foodTagMatches
+      );
     });
-  
+
     return finalFilteredProducts;
   }
-  
-  
 
-  async getProductById(id: string): Promise<any | null> {
+  async getProductByIdFull(id: string): Promise<any | null> {
+    const doc = await this.db.collection(this.collectionName).doc(id).get();
+    if (!doc.exists) return null;
+
+    const data = doc.data();
+    if (!data) return null;
+
+    const ingredients = await fetchDocumentsByIds(
+      this.db,
+      'ingredients',
+      data.ingredientsIds || [],
+    );
+    const foodTags = await fetchDocumentsByIds(
+      this.db,
+      'foodTags',
+      data.foodTagsIds || [],
+    );
+    const dietaryTags = await fetchDocumentsByIds(
+      this.db,
+      'dietaryTags',
+      data.dietaryTagsIds || [],
+    );
+
+    let restaurant: any = null;
+
+    if (data.restaurant_id) {
+      const restaurantDoc = await this.db
+        .collection('restaurants')
+        .doc(data.restaurant_id)
+        .get();
+      restaurant = restaurantDoc.exists
+        ? { id: restaurantDoc.id, ...restaurantDoc.data() }
+        : null;
+    }
+
+    return {
+      id: doc.id,
+      ...data,
+      ingredients,
+      foodTags,
+      dietaryTags,
+      restaurant,
+    };
+  }
+
+  async getProductById(id: string): Promise<any> {
     const doc = await this.db.collection(this.collectionName).doc(id).get();
     return doc.exists ? { id: doc.id, ...doc.data() } : null;
   }
@@ -103,22 +130,30 @@ export class ProductService {
     return true;
   }
   async updateProduct(id: string, product: UpdateProductDto): Promise<boolean> {
-    await this.db.collection(this.collectionName).doc(id).update(
-      product as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>
-    );
+    await this.db
+      .collection(this.collectionName)
+      .doc(id)
+      .update(
+        product as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>,
+      );
     return true;
   }
-  async getProductsByFoodTag(tagId: string): Promise<{ tagName: string | null; products: any[] }> {
+  async getProductsByFoodTag(
+    tagId: string,
+  ): Promise<{ tagName: string | null; products: any[] }> {
     const tagDoc = await this.db.collection('foodTags').doc(tagId).get();
     const tagName = tagDoc.exists ? tagDoc.data()?.name : null;
-  
+
     const snapshot = await this.db
       .collection(this.collectionName)
       .where('foodTagsIds', 'array-contains', tagId)
       .get();
-  
-    const products = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-  
+
+    const products = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
     return { tagName, products };
   }
 }

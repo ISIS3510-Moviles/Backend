@@ -2,6 +2,14 @@ import { Injectable } from '@nestjs/common';
 import admin from 'firebase.config';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
+import { fetchDocumentsByIds } from 'src/restaurant/restaurant.service';
+
+interface Reservation {
+  id: string;
+  user_id: string;
+  restaurant_id: string;
+  [key: string]: any;
+}
 
 @Injectable()
 export class ReservationService {
@@ -17,15 +25,35 @@ export class ReservationService {
   async getReservationsByUserId(userId: string): Promise<any[]> {
     const snapshot = await this.db
       .collection(this.collectionName)
-      .where('user_id', '==', userId) // Filtra por el campo 'user_id'
+      .where('user_id', '==', userId)
       .get();
-  
-    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+    const reservations = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Reservation[];
+
+    const restaurantIds = reservations
+      .map((r) => r.restaurant_id)
+      .filter((id) => !!id);
+
+    const restaurantMap = await fetchDocumentsByIds(
+      this.db,
+      'restaurants',
+      restaurantIds,
+    );
+
+    const result = reservations.map((reservation) => ({
+      ...reservation,
+      restaurant: restaurantMap.get(reservation.restaurant_id) || null,
+    }));
+
+    return result;
   }
 
   async getReservations(): Promise<any[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   }
 
   async getReservationById(id: string): Promise<any | null> {
@@ -40,19 +68,25 @@ export class ReservationService {
     return true;
   }
 
-  async updateReservation(id: string, reservation: UpdateReservationDto): Promise<boolean> {
-    await this.db.collection(this.collectionName).doc(id).update(
-      reservation as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>
-    );
+  async updateReservation(
+    id: string,
+    reservation: UpdateReservationDto,
+  ): Promise<boolean> {
+    await this.db
+      .collection(this.collectionName)
+      .doc(id)
+      .update(
+        reservation as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>,
+      );
     return true;
   }
   async deleteAllReservations(): Promise<boolean> {
     const collectionRef = this.db.collection(this.collectionName);
     let snapshot = await collectionRef.limit(500).get();
-  
+
     while (!snapshot.empty) {
       const batch = this.db.batch();
-      snapshot.docs.forEach(doc => {
+      snapshot.docs.forEach((doc) => {
         batch.delete(doc.ref);
       });
       await batch.commit();
@@ -60,5 +94,4 @@ export class ReservationService {
     }
     return true;
   }
-
 }

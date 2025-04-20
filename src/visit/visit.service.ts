@@ -11,7 +11,7 @@ export class VisitService {
 
 
   async createVisit(visit: CreateVisitDto): Promise<any> {
-    const docRef = this.db.collection(this.collectionName).doc(); // Genera un ID automáticamente
+    const docRef = this.db.collection(this.collectionName).doc(); 
     await docRef.set(visit);
     return { id: docRef.id, ...visit };
   }
