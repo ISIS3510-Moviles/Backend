@@ -21,27 +21,64 @@ export class AlertService {
     return snapshot.docs.map((doc) => doc.data());
   }
 
-  async getAlertsFull(): Promise<any[]> {
-    const snapshot = await this.db.collection(this.collectionName).get();
+async getAlertsFull(): Promise<any[]> {
+  const snapshot = await this.db.collection(this.collectionName).get();
 
-    const alerts: any[] = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+  const alerts: any[] = snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
 
-    const userIds = alerts
-      .map((alert) => alert.publisherId)
-      .filter((id): id is string => !!id);
+  const userIds = alerts
+    .map((alert) => alert.publisherId)
+    .filter((id): id is string => !!id);
 
-    const userMap = await fetchDocumentsByIds(this.db, 'users', userIds);
+  const restaurantIds = alerts
+    .map((alert) => alert.restaurantId)
+    .filter((id): id is string => !!id);
 
-    const enrichedAlerts = alerts.map((alert) => ({
-      ...alert,
-      publisher: userMap.get(alert.publisherId) || null,
-    }));
+  const userMap = await fetchDocumentsByIds(this.db, 'users', userIds);
+  const restaurantMap = await fetchDocumentsByIds(this.db, 'restaurants', restaurantIds);
 
-    return enrichedAlerts;
-  }
+  const enrichedAlerts = alerts.map((alert) => ({
+    ...alert,
+    publisher: userMap.get(alert.publisherId) || null,
+    restaurant: restaurantMap.get(alert.restaurantId) || null,
+  }));
+
+  return enrichedAlerts;
+}
+
+async getAlertsFullByUserId(userId: string): Promise<any[]> {
+  const snapshot = await this.db
+    .collection(this.collectionName)
+    .where('publisherId', '==', userId)
+    .get();
+
+  const alerts: any[] = snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+
+  const userIds = alerts
+    .map((alert) => alert.publisherId)
+    .filter((id): id is string => !!id);
+
+  const restaurantIds = alerts
+    .map((alert) => alert.restaurantId)
+    .filter((id): id is string => !!id);
+
+  const userMap = await fetchDocumentsByIds(this.db, 'users', userIds);
+  const restaurantMap = await fetchDocumentsByIds(this.db, 'restaurants', restaurantIds);
+
+  const enrichedAlerts = alerts.map((alert) => ({
+    ...alert,
+    publisher: userMap.get(alert.publisherId) || null,
+    restaurant: restaurantMap.get(alert.restaurantId) || null,
+  }));
+
+  return enrichedAlerts;
+}
 
   async getAlertById(id: string): Promise<any | null> {
     const doc = await this.db.collection(this.collectionName).doc(id).get();

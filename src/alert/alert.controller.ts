@@ -30,6 +30,13 @@ export class AlertController {
     return this.alertService.getAlertsFull();
   }
 
+  @Get('full/user/:userId')
+  getAlertsFullByUserId(@Param('userId') userId: string) {
+    return this.alertService.getAlertsFullByUserId(userId);
+  }
+
+  
+
   @Get(':id')
   getAlertById(@Param('id') id: string) { 
     return this.alertService.getAlertById(id);
