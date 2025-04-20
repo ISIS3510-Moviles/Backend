@@ -28,8 +28,14 @@ export class RestaurantController {
   }
 
   @Get('tags')
-  getRestaurantsTagsJoin(@Query('nameMatch') nameMatch?: string) {
-    return this.restaurantService.getRestaurantsTagsJoin(nameMatch);
+  getRestaurantsTagsJoin(
+    @Query('nameMatch') nameMatch?: string,
+    @Query('tagsInclude') tagsInclude?: string[],
+  ) {
+    return this.restaurantService.getRestaurantsTagsJoin(
+      nameMatch,
+      tagsInclude,
+    );
   }
 
   @Get('full')
