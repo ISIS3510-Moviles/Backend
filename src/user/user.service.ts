@@ -137,7 +137,6 @@ export class UserService {
   }
 
   async updateUser(id: string, user: UpdateUserDto): Promise<boolean> {
-    console.log('Updating user:', id, user);
     await this.db
       .collection(this.collectionName)
       .doc(id)

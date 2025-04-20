@@ -25,9 +25,19 @@ export class AlertController {
     return this.alertService.getAlerts();
   }
 
+  @Get('full')
+  getAlertsFull() {
+    return this.alertService.getAlertsFull();
+  }
+
   @Get(':id')
   getAlertById(@Param('id') id: string) { 
     return this.alertService.getAlertById(id);
+  }
+
+  @Get('full/:id')
+  getAlertByIdFull(@Param('id') id: string) { 
+    return this.alertService.getAlertByIdFull(id);
   }
 
   @Delete(':id')

@@ -62,9 +62,7 @@ export class ReservationService {
   }
 
   async deleteReservation(id: string): Promise<boolean> {
-    console.log(`Intentando borrar la reserva con id: ${id}`);
     await this.db.collection(this.collectionName).doc(id).delete();
-    console.log(`Reserva con id ${id} borrada correctamente`);
     return true;
   }
 

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { UpdateAlertDto } from './dto/update-alert.dto';
 import admin from 'firebase.config';
+import { fetchDocumentsByIds } from 'src/restaurant/restaurant.service';
 
 @Injectable()
 export class AlertService {
@@ -17,12 +18,58 @@ export class AlertService {
 
   async getAlerts(): Promise<any[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
-    return snapshot.docs.map(doc => doc.data());
+    return snapshot.docs.map((doc) => doc.data());
+  }
+
+  async getAlertsFull(): Promise<any[]> {
+    const snapshot = await this.db.collection(this.collectionName).get();
+
+    const alerts: any[] = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    const userIds = alerts
+      .map((alert) => alert.publisherId)
+      .filter((id): id is string => !!id);
+
+    const userMap = await fetchDocumentsByIds(this.db, 'users', userIds);
+
+    const enrichedAlerts = alerts.map((alert) => ({
+      ...alert,
+      publisher: userMap.get(alert.publisherId) || null,
+    }));
+
+    return enrichedAlerts;
   }
 
   async getAlertById(id: string): Promise<any | null> {
     const doc = await this.db.collection(this.collectionName).doc(id).get();
     return doc.exists ? doc.data() : null;
+  }
+
+  async getAlertByIdFull(id: string): Promise<any | null> {
+    const doc = await this.db.collection(this.collectionName).doc(id).get();
+    if (!doc.exists) return null;
+
+    const data = doc.data();
+    if (!data) return null;
+
+    let publisher: any = null;
+
+    if (data.publisherId) {
+      const userDoc = await this.db
+        .collection('users')
+        .doc(data.publisherId)
+        .get();
+      publisher = userDoc.exists ? { id: userDoc.id, ...userDoc.data() } : null;
+    }
+
+    return {
+      id: doc.id,
+      ...data,
+      publisher,
+    };
   }
 
   async deleteAlert(id: string): Promise<boolean> {
@@ -34,7 +81,9 @@ export class AlertService {
     await this.db
       .collection(this.collectionName)
       .doc(id)
-      .update(alert as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>);
+      .update(
+        alert as unknown as FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>,
+      );
     return true;
   }
 }
