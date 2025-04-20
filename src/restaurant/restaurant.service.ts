@@ -223,7 +223,7 @@ export class RestaurantService {
 
   async buildRestaurantSmart(
     doc: FirebaseFirestore.QueryDocumentSnapshot,
-  ): Promise<RestaurantSmart> {
+  ): Promise<RestaurantSmart & Restaurant> {
     const data = doc.data() as Restaurant;
 
     const foodTags = await this.fetchTags(data.foodTagsIds, 'foodTags');
@@ -240,21 +240,28 @@ export class RestaurantService {
       'restaurant_id',
       doc.id,
     );
-    const comments = await this.fetchRelatedDocs(
+
+    const rawComments = await this.fetchRelatedDocs(
       'comments',
       'restaurantId',
       doc.id,
     );
 
+    const authorIds = rawComments.map((c) => c.authorId).filter((id) => !!id);
+    const userMap = await fetchDocumentsByIds(this.db, 'users', authorIds);
+
+    const comments = rawComments.map((comment) => ({
+      ...comment,
+      authorName: userMap.get(comment.authorId)?.name || 'anonymous',
+    }));
+
     return {
+      ...data,
       id: doc.id,
-      name: data.name,
       tags,
-      profilePhoto: data.profilePhoto,
-      rating: data.rating || 0,
-      comments,
-      reservations,
       subscribers,
+      reservations,
+      comments,
     };
   }
 
