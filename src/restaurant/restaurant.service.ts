@@ -4,32 +4,35 @@ import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 import { DocumentSnapshot } from 'firebase-admin/firestore';
 
-
-async function fetchDocumentsByIds(db: FirebaseFirestore.Firestore, collectionName: string, ids: string[]): Promise<Map<string, any>> {
-  const uniqueIds = [...new Set(ids)].filter(id => id);
+async function fetchDocumentsByIds(
+  db: FirebaseFirestore.Firestore,
+  collectionName: string,
+  ids: string[],
+): Promise<Map<string, any>> {
+  const uniqueIds = [...new Set(ids)].filter((id) => id);
   const docMap = new Map<string, any>();
 
   if (uniqueIds.length === 0) {
     return docMap;
   }
 
-
-  const promises: Promise<DocumentSnapshot>[] = uniqueIds.map(id =>
-    db.collection(collectionName).doc(id).get()
+  const promises: Promise<DocumentSnapshot>[] = uniqueIds.map((id) =>
+    db.collection(collectionName).doc(id).get(),
   );
 
   try {
     const snapshots = await Promise.all(promises);
-    snapshots.forEach(doc => {
+    snapshots.forEach((doc) => {
       if (doc.exists) {
         docMap.set(doc.id, doc.data());
       } else {
-        console.warn(`Document with ID ${doc.id} not found in collection ${collectionName}`);
+        console.warn(
+          `Document with ID ${doc.id} not found in collection ${collectionName}`,
+        );
       }
     });
   } catch (error) {
     console.error(`Error fetching documents from ${collectionName}:`, error);
-
   }
   return docMap;
 }
@@ -88,7 +91,9 @@ export class RestaurantService {
 
   async getRestaurants(nameMatch?: string): Promise<any[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
-    let restaurants = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+    let restaurants = snapshot.docs.map(
+      (doc) => ({ id: doc.id, ...doc.data() }) as any,
+    );
 
     if (!nameMatch || nameMatch.trim() === '') {
       return restaurants;
@@ -96,58 +101,78 @@ export class RestaurantService {
 
     const match = nameMatch.toLowerCase().trim();
 
-
-    const allDietaryTagIds = restaurants.flatMap(r => r.dietaryTagsIds || []);
-    const allFoodTagIds = restaurants.flatMap(r => r.foodTagsIds || []);
-
+    const allDietaryTagIds = restaurants.flatMap((r) => r.dietaryTagsIds || []);
+    const allFoodTagIds = restaurants.flatMap((r) => r.foodTagsIds || []);
 
     const [dietaryTagMap, foodTagMap] = await Promise.all([
       fetchDocumentsByIds(this.db, 'dietaryTags', allDietaryTagIds),
-      fetchDocumentsByIds(this.db, 'foodTags', allFoodTagIds)
+      fetchDocumentsByIds(this.db, 'foodTags', allFoodTagIds),
     ]);
 
-
-    const finalFilteredRestaurants = restaurants.filter(restaurant => {
+    const finalFilteredRestaurants = restaurants.filter((restaurant) => {
       const nameMatches = restaurant.name?.toLowerCase().includes(match);
-      const descriptionMatches = restaurant.description?.toLowerCase().includes(match);
-
+      const descriptionMatches = restaurant.description
+        ?.toLowerCase()
+        .includes(match);
 
       const dietaryTagMatches = restaurant.dietaryTagsIds?.some((id: string) =>
-        dietaryTagMap.get(id)?.name?.toLowerCase().includes(match)
+        dietaryTagMap.get(id)?.name?.toLowerCase().includes(match),
       );
-
 
       const foodTagMatches = restaurant.foodTagsIds?.some((id: string) =>
-        foodTagMap.get(id)?.name?.toLowerCase().includes(match)
+        foodTagMap.get(id)?.name?.toLowerCase().includes(match),
       );
 
-      return nameMatches || descriptionMatches || dietaryTagMatches || foodTagMatches;
+      return (
+        nameMatches || descriptionMatches || dietaryTagMatches || foodTagMatches
+      );
     });
 
     return finalFilteredRestaurants;
   }
 
-
-  async getRestaurantsTagsJoin(nameMatch?: string): Promise<any[]> {
+  async getRestaurantsTagsJoin(
+    nameMatch?: string,
+    tagsInclude?: string[],
+  ): Promise<any[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
-    let restaurants = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as any);
-    if (nameMatch && nameMatch.trim() !== '') {
+
+    let restaurants = snapshot.docs.map(
+      (doc) => ({ id: doc.id, ...doc.data() }) as any,
+    );
+
+    // Filtrar por nombre si hay coincidencia
+    if (nameMatch?.trim()) {
       const match = nameMatch.toLowerCase();
-      restaurants = restaurants.filter(
-        (restaurant) =>
-          restaurant.name && restaurant.name.toLowerCase().includes(match),
+      restaurants = restaurants.filter((restaurant) =>
+        restaurant.name?.toLowerCase().includes(match),
       );
     }
+
+    // Obtener tags por restaurante
     const restaurantsWithTags = await Promise.all(
       restaurants.map(async (restaurant) => {
-        const foodTags = await this.fetchTags(restaurant.foodTagsIds, 'foodTags');
-        const dietaryTags = await this.fetchTags(restaurant.dietaryTagsIds, 'dietaryTags');
+        const foodTags = await this.fetchTags(
+          restaurant.foodTagsIds,
+          'foodTags',
+        );
+        const dietaryTags = await this.fetchTags(
+          restaurant.dietaryTagsIds,
+          'dietaryTags',
+        );
         const tags = [...foodTags, ...dietaryTags];
         return { ...restaurant, tags };
       }),
     );
 
-    return restaurantsWithTags;
+    let filteredRestaurants = restaurantsWithTags;
+    if (tagsInclude && tagsInclude?.length) {
+      filteredRestaurants = restaurantsWithTags.filter((restaurant) =>
+        restaurant.tags.some((tag: string) => tagsInclude.includes(tag)),
+      );
+    }
+
+    return filteredRestaurants;
   }
 
   private async fetchTags(
