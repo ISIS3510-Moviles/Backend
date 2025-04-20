@@ -4,6 +4,7 @@ import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 import { DocumentSnapshot } from 'firebase-admin/firestore';
 
+
 export async function fetchDocumentsByIds(
   db: FirebaseFirestore.Firestore,
   collectionName: string,
@@ -147,7 +148,6 @@ export class RestaurantService {
         restaurant.name?.toLowerCase().includes(match),
       );
     }
-
     const restaurantsWithTags = await Promise.all(
       restaurants.map(async (restaurant) => {
         const foodTags = await this.fetchTags(
@@ -224,11 +224,13 @@ async buildRestaurantSmart(
 ): Promise<RestaurantSmart & Restaurant & { products: any[] }> {
   const data = doc.data() as Restaurant;
 
+
   const foodTags = await this.fetchTags(data.foodTagsIds, 'foodTags');
   const dietaryTags = await this.fetchTags(data.dietaryTagsIds, 'dietaryTags');
   const tags = [...foodTags, ...dietaryTags];
 
   const subscribers = await this.fetchSubscribers(data.suscribersIds);
+
 
   const reservations = await this.fetchRelatedDocs(
     'reservations',
@@ -270,7 +272,6 @@ async buildRestaurantSmart(
     products,
   };
 }
-
 
   async getRestaurantsFull(): Promise<RestaurantSmart[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
