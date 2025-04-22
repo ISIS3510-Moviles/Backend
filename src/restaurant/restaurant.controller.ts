@@ -27,6 +27,23 @@ export class RestaurantController {
     return this.restaurantService.getRestaurants(nameMatch);
   }
 
+  @Post(':id/subscribe')
+  createSubscription(
+    @Param('id') restaurantId: string,
+    @Body('userId') userId: string,
+  ) {
+    return this.restaurantService.subscribeUser(restaurantId, userId);
+  }
+
+  @Post(':id/unsubscribe')
+  createUnsubscription(
+    @Param('id') restaurantId: string,
+    @Body('userId') userId: string,
+  ) {
+    return this.restaurantService.unsubscribeUser(restaurantId, userId);
+  }
+
+
   @Get('tags')
   getRestaurantsTagsJoin(
     @Query('nameMatch') nameMatch?: string,
