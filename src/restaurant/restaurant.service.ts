@@ -89,6 +89,92 @@ export class RestaurantService {
     await docRef.set(restaurant);
     return { id: docRef.id, ...restaurant };
   }
+  async subscribeUser(restaurantId: string, userId: string): Promise<boolean> {
+    const restaurantRef = this.db
+      .collection(this.collectionName)
+      .doc(restaurantId);
+    const userRef = this.db.collection('users').doc(userId);
+
+    const [restaurantDoc, userDoc] = await Promise.all([
+      restaurantRef.get(),
+      userRef.get(),
+    ]);
+
+    if (!restaurantDoc.exists) {
+      throw new Error(`Restaurant with ID ${restaurantId} does not exist.`);
+    }
+
+    if (!userDoc.exists) {
+      throw new Error(`User with ID ${userId} does not exist.`);
+    }
+
+    try {
+      const batch = this.db.batch();
+
+      batch.update(restaurantRef, {
+        suscribersIds: admin.firestore.FieldValue.arrayUnion(userId),
+      });
+
+      batch.update(userRef, {
+        suscribedRestaurantIds:
+          admin.firestore.FieldValue.arrayUnion(restaurantId),
+      });
+
+      await batch.commit();
+      return true;
+    } catch (error) {
+      console.error(
+        'Error subscribing user and updating user document:',
+        error,
+      );
+      throw new Error('Failed to subscribe user to restaurant.');
+    }
+  }
+
+  async unsubscribeUser(
+    restaurantId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const restaurantRef = this.db
+      .collection(this.collectionName)
+      .doc(restaurantId);
+    const userRef = this.db.collection('users').doc(userId);
+
+    const [restaurantDoc, userDoc] = await Promise.all([
+      restaurantRef.get(),
+      userRef.get(),
+    ]);
+
+    if (!restaurantDoc.exists) {
+      throw new Error(`Restaurant with ID ${restaurantId} does not exist.`);
+    }
+
+    if (!userDoc.exists) {
+      throw new Error(`User with ID ${userId} does not exist.`);
+    }
+
+    try {
+      const batch = this.db.batch();
+
+      batch.update(restaurantRef, {
+        suscribersIds: admin.firestore.FieldValue.arrayRemove(userId),
+      });
+
+      batch.update(userRef, {
+        suscribedRestaurantIds:
+          admin.firestore.FieldValue.arrayRemove(restaurantId),
+      });
+
+      await batch.commit();
+      return true;
+    } catch (error) {
+      console.error(
+        'Error unsubscribing user and updating user document:',
+        error,
+      );
+      throw new Error('Failed to unsubscribe user from restaurant.');
+    }
+  }
 
   async getRestaurants(nameMatch?: string): Promise<any[]> {
     const snapshot = await this.db.collection(this.collectionName).get();

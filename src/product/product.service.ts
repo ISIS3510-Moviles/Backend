@@ -75,50 +75,53 @@ export class ProductService {
     return finalFilteredProducts;
   }
 
-  async getProductByIdFull(id: string): Promise<any | null> {
-    const doc = await this.db.collection(this.collectionName).doc(id).get();
-    if (!doc.exists) return null;
+async getProductByIdFull(id: string): Promise<any | null> {
+  const doc = await this.db.collection(this.collectionName).doc(id).get();
+  if (!doc.exists) return null;
 
-    const data = doc.data();
-    if (!data) return null;
+  const data = doc.data();
+  if (!data) return null;
 
-    const ingredients = await fetchDocumentsByIds(
-      this.db,
-      'ingredients',
-      data.ingredientsIds || [],
-    );
-    const foodTags = await fetchDocumentsByIds(
-      this.db,
-      'foodTags',
-      data.foodTagsIds || [],
-    );
-    const dietaryTags = await fetchDocumentsByIds(
-      this.db,
-      'dietaryTags',
-      data.dietaryTagsIds || [],
-    );
+  const [ingredientsMap, foodTagsMap, dietaryTagsMap] = await Promise.all([
+    fetchDocumentsByIds(this.db, 'ingredients', data.ingredientsIds || []),
+    fetchDocumentsByIds(this.db, 'foodTags', data.foodTagsIds || []),
+    fetchDocumentsByIds(this.db, 'dietaryTags', data.dietaryTagsIds || []),
+  ]);
 
-    let restaurant: any = null;
+  const ingredients = (data.ingredientsIds || []).map(
+    (id: string) => ingredientsMap.get(id),
+  );
 
-    if (data.restaurant_id) {
-      const restaurantDoc = await this.db
-        .collection('restaurants')
-        .doc(data.restaurant_id)
-        .get();
-      restaurant = restaurantDoc.exists
-        ? { id: restaurantDoc.id, ...restaurantDoc.data() }
-        : null;
-    }
+  const foodTags = (data.foodTagsIds || []).map(
+    (id: string) => foodTagsMap.get(id),
+  );
 
-    return {
-      id: doc.id,
-      ...data,
-      ingredients,
-      foodTags,
-      dietaryTags,
-      restaurant,
-    };
+  const dietaryTags = (data.dietaryTagsIds || []).map(
+    (id: string) => dietaryTagsMap.get(id),
+  );
+
+  let restaurant: any = null;
+
+  if (data.restaurant_id) {
+    const restaurantDoc = await this.db
+      .collection('restaurants')
+      .doc(data.restaurant_id)
+      .get();
+
+    restaurant = restaurantDoc.exists
+      ? { id: restaurantDoc.id, ...restaurantDoc.data() }
+      : null;
   }
+
+  return {
+    id: doc.id,
+    ...data,
+    ingredients,
+    foodTags,
+    dietaryTags,
+    restaurant,
+  };
+}
 
   async getProductById(id: string): Promise<any> {
     const doc = await this.db.collection(this.collectionName).doc(id).get();

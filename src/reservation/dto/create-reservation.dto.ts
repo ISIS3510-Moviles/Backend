@@ -1,5 +1,5 @@
 export class CreateReservationDto {
-  date: Date;
+  date: string;
   time: string;
   numberComensals: number;
   isCompleted: boolean;

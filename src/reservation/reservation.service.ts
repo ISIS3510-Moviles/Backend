@@ -4,6 +4,19 @@ import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { fetchDocumentsByIds } from 'src/restaurant/restaurant.service';
 
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES');
+}
+
+function formatTime(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 interface Reservation {
   id: string;
   user_id: string;
@@ -19,6 +32,24 @@ export class ReservationService {
   async createReservation(reservation: CreateReservationDto): Promise<any> {
     const docRef = this.db.collection(this.collectionName).doc();
     await docRef.set(reservation);
+
+    const restaurantSnap = await this.db
+      .collection('restaurants')
+      .doc(reservation.restaurant_id)
+      .get();
+    const restaurantData = restaurantSnap.data();
+
+    const alert = {
+      date: new Date().toISOString(),
+      icon: restaurantData?.profilePhoto || '',
+      message: `Your reservation has been set up on ${formatDate(reservation.date)} at ${formatTime(reservation.date)}`,
+      restaurantId: reservation.restaurant_id,
+      votes: 0,
+      publisherId: reservation.user_id,
+    };
+
+    await this.db.collection('alerts').add(alert);
+
     return { id: docRef.id, ...reservation };
   }
 

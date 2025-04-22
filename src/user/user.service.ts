@@ -15,14 +15,18 @@ export class UserService {
   constructor(private readonly httpService: HttpService) {}
 
 
-  async createUser(user: CreateUserDto): Promise<any> {
-    const docRef = this.db.collection(this.collectionName).doc(user.id); 
-    await docRef.set(user);
-    const { id, ...userData } = user;
-    return { id: docRef.id, ...userData };
-  }
-  
+async createUser(user: CreateUserDto): Promise<any> {
+  const docRef = user.id?.trim()
+    ? this.db.collection(this.collectionName).doc(user.id.trim())
+    : this.db.collection(this.collectionName).doc();
 
+  const userWithId = { ...user, id: docRef.id };
+
+  await docRef.set(userWithId);
+
+  const { id, ...userData } = userWithId;
+  return { id, ...userData };
+}
   async getRecommendations(userId: string): Promise<any> {
     const url = 'http://35.208.18.145:8000/recommend';
     const response = await firstValueFrom(
@@ -37,47 +41,19 @@ export class UserService {
       .collection(this.collectionName)
       .where('email', '==', user.email)
       .get();
-  
+
+    let userId: string;
+
     if (!snapshot.empty) {
-      const userDoc = snapshot.docs[0];
-      const userData = userDoc.data() as any;
-  
-      let institution: { id: string; [key: string]: any } | null = null; 
-      if (userData.institutionId && userData.institutionId.trim() !== '') {
-        const instDoc = await this.db
-          .collection('institutions')
-          .doc(userData.institutionId)
-          .get();
-        institution = instDoc.exists
-          ? { id: instDoc.id, ...instDoc.data() }
-          : null;
-      }
-      const savedProductsIds: string[] = (
-        userData.savedProductsIds || []
-      ).filter((pid) => pid && pid.trim() !== '');
-      const savedProducts = await Promise.all(
-        savedProductsIds.map(async (pid) => {
-          const productDoc = await this.db.collection('products').doc(pid).get();
-          return productDoc.exists
-            ? { id: productDoc.id, ...productDoc.data() }
-            : null;
-        }),
-      );
-      const filteredSavedProducts = savedProducts.filter((p) => p !== null);
-  
-      return {
-        id: userDoc.id,
-        ...userData,
-        institution,
-        saved_products: filteredSavedProducts,
-      };
+      userId = snapshot.docs[0].id;
     } else {
-      const docRef = this.db.collection(this.collectionName).doc();
-      await docRef.set(user);
-      const { id, ...userData } = user;
-      return { id: docRef.id, ...userData };
+      const newUser = await this.createUser(user);
+      userId = newUser.id;
     }
+
+    return await this.getUserByIdFull(userId);
   }
+
 
   async getUsers(): Promise<any[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
