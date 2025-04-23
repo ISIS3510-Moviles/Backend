@@ -66,6 +66,22 @@ async createUser(user: CreateUserDto): Promise<any> {
     return users.find((user) => user.id === id) || null;
   }
 
+  async getUserByEmail(email: string): Promise<any> {
+    const snapshot = await this.db
+      .collection(this.collectionName)
+      .where('email', '==', email)
+      .limit(1)
+      .get();
+  
+    if (snapshot.empty) {
+      return null;
+    }
+    
+    const doc = snapshot.docs[0];
+    return { id: doc.id, ...doc.data() };
+  }
+
+
   async getUserByIdFull(id: string): Promise<any> {
     const snapshot = await this.db.collection(this.collectionName).get();
     const userDoc = snapshot.docs.find((doc) => doc.id === id);
