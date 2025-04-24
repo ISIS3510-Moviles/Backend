@@ -22,6 +22,11 @@ export class IngredientController {
     return this.ingredientService.getIngredientById(id);
   }
 
+  @Patch(':id/increment-clicks')
+  incrementClicks(@Param('id') id: string) {
+    return this.ingredientService.incrementClicks(id);
+  }
+
   @Delete(':id')
   deleteIngredient(@Param('id') id: string) {
     return this.ingredientService.deleteIngredient(id);

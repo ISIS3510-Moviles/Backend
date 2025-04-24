@@ -145,12 +145,12 @@ export class ProductService {
     return finalFilteredProducts;
   }
 
-  async getProductByIdFull(id: string): Promise<any | null> {
-    const doc = await this.db.collection(this.collectionName).doc(id).get();
-    if (!doc.exists) return null;
+async getProductByIdFull(id: string): Promise<any | null> {
+  const doc = await this.db.collection(this.collectionName).doc(id).get();
+  if (!doc.exists) return null;
 
-    const data = doc.data();
-    if (!data) return null;
+  const data = doc.data();
+  if (!data) return null;
 
     const [ingredientsMap, foodTagsMap, dietaryTagsMap] = await Promise.all([
       fetchDocumentsByIds(this.db, 'ingredients', data.ingredientsIds || []),
@@ -170,7 +170,10 @@ export class ProductService {
       dietaryTagsMap.get(id),
     );
 
-    let restaurant: any = null;
+
+  const ingredients = (data.ingredientsIds || []).map(
+    (id: string) => ingredientsMap.get(id),
+  );
 
     if (data.restaurant_id) {
       const restaurantDoc = await this.db
@@ -183,15 +186,37 @@ export class ProductService {
         : null;
     }
 
-    return {
-      id: doc.id,
-      ...data,
-      ingredients,
-      foodTags,
-      dietaryTags,
-      restaurant,
-    };
+  const foodTags = (data.foodTagsIds || []).map(
+    (id: string) => foodTagsMap.get(id),
+  );
+
+
+  const dietaryTags = (data.dietaryTagsIds || []).map(
+    (id: string) => dietaryTagsMap.get(id),
+  );
+
+  let restaurant: any = null;
+
+  if (data.restaurant_id) {
+    const restaurantDoc = await this.db
+      .collection('restaurants')
+      .doc(data.restaurant_id)
+      .get();
+
+    restaurant = restaurantDoc.exists
+      ? { id: restaurantDoc.id, ...restaurantDoc.data() }
+      : null;
   }
+
+  return {
+    id: doc.id,
+    ...data,
+    ingredients,
+    foodTags,
+    dietaryTags,
+    restaurant,
+  };
+}
 
   async getProductById(id: string): Promise<any> {
     const doc = await this.db.collection(this.collectionName).doc(id).get();

@@ -37,6 +37,15 @@ export class UserController {
     return await this.userService.getUsersTag();
   }
 
+  @Get('email/:email')
+async getUserByEmail(@Param('email') email: string) {
+  const user = await this.userService.getUserByEmail(email);
+  if (!user) {
+    throw new NotFoundException(`User with email ${email} not found`);
+  }
+  return user;
+}
+
   @Get(':id')
   getUserById(@Param('id') id: string) {
     return this.userService.getUserById(id);

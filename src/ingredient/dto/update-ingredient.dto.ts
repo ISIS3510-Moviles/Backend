@@ -3,5 +3,6 @@ export class UpdateIngredientDto {
     description?: string;
     productsIds?: string[];
     image?: string;
+    clicks?: number;
   }
   
