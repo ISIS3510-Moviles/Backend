@@ -10,6 +10,76 @@ export class ProductService {
   private db = admin.firestore();
   private collectionName = 'products';
 
+  async subscribeUser(productId: string, userId: string): Promise<boolean> {
+    const productRef = this.db.collection('products').doc(productId);
+    const userRef = this.db.collection('users').doc(userId);
+
+    const [productDoc, userDoc] = await Promise.all([
+      productRef.get(),
+      userRef.get(),
+    ]);
+
+    if (!productDoc.exists) {
+      throw new Error(`Product with ID ${productId} does not exist.`);
+    }
+
+    if (!userDoc.exists) {
+      throw new Error(`User with ID ${userId} does not exist.`);
+    }
+
+    try {
+      const batch = this.db.batch();
+
+      batch.update(userRef, {
+        savedProductsIds: admin.firestore.FieldValue.arrayUnion(productId),
+      });
+
+      await batch.commit();
+      return true;
+    } catch (error) {
+      console.error(
+        'Error subscribing user and updating user document:',
+        error,
+      );
+      throw new Error('Failed to subscribe user to product.');
+    }
+  }
+
+  async unsubscribeUser(productId: string, userId: string): Promise<boolean> {
+    const productRef = this.db.collection('products').doc(productId);
+    const userRef = this.db.collection('users').doc(userId);
+
+    const [productDoc, userDoc] = await Promise.all([
+      productRef.get(),
+      userRef.get(),
+    ]);
+
+    if (!productDoc.exists) {
+      throw new Error(`Product with ID ${productId} does not exist.`);
+    }
+
+    if (!userDoc.exists) {
+      throw new Error(`User with ID ${userId} does not exist.`);
+    }
+
+    try {
+      const batch = this.db.batch();
+
+      batch.update(userRef, {
+        savedProductsIds: admin.firestore.FieldValue.arrayRemove(productId),
+      });
+
+      await batch.commit();
+      return true;
+    } catch (error) {
+      console.error(
+        'Error unsubscribing user and updating user document:',
+        error,
+      );
+      throw new Error('Failed to unsubscribe user from product.');
+    }
+  }
+
   async createProduct(product: CreateProductDto): Promise<any> {
     const docRef = this.db.collection(this.collectionName).doc();
     await docRef.set(product);
@@ -75,53 +145,53 @@ export class ProductService {
     return finalFilteredProducts;
   }
 
-async getProductByIdFull(id: string): Promise<any | null> {
-  const doc = await this.db.collection(this.collectionName).doc(id).get();
-  if (!doc.exists) return null;
+  async getProductByIdFull(id: string): Promise<any | null> {
+    const doc = await this.db.collection(this.collectionName).doc(id).get();
+    if (!doc.exists) return null;
 
-  const data = doc.data();
-  if (!data) return null;
+    const data = doc.data();
+    if (!data) return null;
 
-  const [ingredientsMap, foodTagsMap, dietaryTagsMap] = await Promise.all([
-    fetchDocumentsByIds(this.db, 'ingredients', data.ingredientsIds || []),
-    fetchDocumentsByIds(this.db, 'foodTags', data.foodTagsIds || []),
-    fetchDocumentsByIds(this.db, 'dietaryTags', data.dietaryTagsIds || []),
-  ]);
+    const [ingredientsMap, foodTagsMap, dietaryTagsMap] = await Promise.all([
+      fetchDocumentsByIds(this.db, 'ingredients', data.ingredientsIds || []),
+      fetchDocumentsByIds(this.db, 'foodTags', data.foodTagsIds || []),
+      fetchDocumentsByIds(this.db, 'dietaryTags', data.dietaryTagsIds || []),
+    ]);
 
-  const ingredients = (data.ingredientsIds || []).map(
-    (id: string) => ingredientsMap.get(id),
-  );
+    const ingredients = (data.ingredientsIds || []).map((id: string) =>
+      ingredientsMap.get(id),
+    );
 
-  const foodTags = (data.foodTagsIds || []).map(
-    (id: string) => foodTagsMap.get(id),
-  );
+    const foodTags = (data.foodTagsIds || []).map((id: string) =>
+      foodTagsMap.get(id),
+    );
 
-  const dietaryTags = (data.dietaryTagsIds || []).map(
-    (id: string) => dietaryTagsMap.get(id),
-  );
+    const dietaryTags = (data.dietaryTagsIds || []).map((id: string) =>
+      dietaryTagsMap.get(id),
+    );
 
-  let restaurant: any = null;
+    let restaurant: any = null;
 
-  if (data.restaurant_id) {
-    const restaurantDoc = await this.db
-      .collection('restaurants')
-      .doc(data.restaurant_id)
-      .get();
+    if (data.restaurant_id) {
+      const restaurantDoc = await this.db
+        .collection('restaurants')
+        .doc(data.restaurant_id)
+        .get();
 
-    restaurant = restaurantDoc.exists
-      ? { id: restaurantDoc.id, ...restaurantDoc.data() }
-      : null;
+      restaurant = restaurantDoc.exists
+        ? { id: restaurantDoc.id, ...restaurantDoc.data() }
+        : null;
+    }
+
+    return {
+      id: doc.id,
+      ...data,
+      ingredients,
+      foodTags,
+      dietaryTags,
+      restaurant,
+    };
   }
-
-  return {
-    id: doc.id,
-    ...data,
-    ingredients,
-    foodTags,
-    dietaryTags,
-    restaurant,
-  };
-}
 
   async getProductById(id: string): Promise<any> {
     const doc = await this.db.collection(this.collectionName).doc(id).get();

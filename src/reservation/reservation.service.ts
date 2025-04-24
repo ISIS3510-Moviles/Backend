@@ -6,15 +6,7 @@ import { fetchDocumentsByIds } from 'src/restaurant/restaurant.service';
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
-  return date.toLocaleDateString('es-ES');
-}
-
-function formatTime(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString('es-ES', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return date.toLocaleDateString('es-ES', { timeZone: 'UTC' });
 }
 
 interface Reservation {
@@ -42,7 +34,7 @@ export class ReservationService {
     const alert = {
       date: new Date().toISOString(),
       icon: restaurantData?.profilePhoto || '',
-      message: `Your reservation has been set up on ${formatDate(reservation.date)} at ${formatTime(reservation.date)}`,
+      message: `Your reservation has been set up on ${formatDate(reservation.date)} at ${reservation.time}`,
       restaurantId: reservation.restaurant_id,
       votes: 0,
       publisherId: reservation.user_id,

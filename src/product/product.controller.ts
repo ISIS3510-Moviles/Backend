@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -17,17 +26,31 @@ export class ProductController {
     return this.productService.getProducts(nameMatch);
   }
 
+  @Post(':id/subscribe')
+  createSubscription(
+    @Param('id') productId: string,
+    @Body('userId') userId: string,
+  ) {
+    return this.productService.subscribeUser(productId, userId);
+  }
+
+  @Post(':id/unsubscribe')
+  createUnsubscription(
+    @Param('id') productId: string,
+    @Body('userId') userId: string,
+  ) {
+    return this.productService.unsubscribeUser(productId, userId);
+  }
+
   @Get(':id')
   getProductById(@Param('id') id: string) {
     return this.productService.getProductById(id);
   }
 
-  
   @Get('full/:id')
   getProductByIdFull(@Param('id') id: string) {
     return this.productService.getProductByIdFull(id);
   }
-
 
   @Delete(':id')
   deleteProductById(@Param('id') id: string) {
