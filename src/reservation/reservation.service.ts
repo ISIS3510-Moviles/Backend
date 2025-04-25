@@ -3,6 +3,8 @@ import admin from 'firebase.config';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { fetchDocumentsByIds } from 'src/restaurant/restaurant.service';
+import { format } from 'date-fns';
+
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -79,41 +81,42 @@ export class ReservationService {
     try {
       const docRef = this.db.collection(this.collectionName).doc(id);
       const doc = await docRef.get();
-      
+  
       if (!doc.exists) {
         throw new NotFoundException(`Reservation with ID ${id} not found`);
       }
-      
+  
       const reservationData = doc.data() as FirebaseFirestore.DocumentData;
-      
-      await docRef.update({ 
-        hasBeenCancelled: true 
+  
+      await docRef.update({
+        hasBeenCancelled: true
       });
-      
+  
       const restaurantSnap = await this.db
         .collection('restaurants')
         .doc(reservationData.restaurant_id)
         .get();
       const restaurantData = restaurantSnap.data();
-      
+  
       const alert = {
         id: docRef.id,
         date: new Date().toISOString(),
         icon: restaurantData?.profilePhoto || '',
-        message: `Your reservation for ${formatDate(reservationData.date)} at ${
-          formatTime(reservationData.date)
-        } has been cancelled`,
+        message: `Your reservation for ${format(new Date(reservationData.date), 'PPP')} at ${format(
+          new Date(reservationData.date),
+          'p'
+        )} has been cancelled`,
         restaurantId: reservationData.restaurant_id,
         votes: 0,
         publisherId: reservationData.user_id,
       };
-      
+  
       await this.db.collection('alerts').add(alert);
-      
-      return { 
-        id, 
-        ...reservationData, 
-        hasBeenCancelled: true 
+  
+      return {
+        id,
+        ...reservationData,
+        hasBeenCancelled: true
       };
     } catch (error) {
       console.error(`Error cancelling reservation: ${error}`);
