@@ -5,4 +5,5 @@ export class CreateReservationDto {
   isCompleted: boolean;
   restaurant_id: string;
   user_id: string;
+  hasBeenCancelled: boolean = false;
 }

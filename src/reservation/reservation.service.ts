@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import admin from 'firebase.config';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
@@ -81,6 +81,52 @@ export class ReservationService {
     }));
 
     return result;
+  }
+
+  async cancelReservation(id: string): Promise<any> {
+    try {
+      const docRef = this.db.collection(this.collectionName).doc(id);
+      const doc = await docRef.get();
+      
+      if (!doc.exists) {
+        throw new NotFoundException(`Reservation with ID ${id} not found`);
+      }
+      
+      const reservationData = doc.data() as FirebaseFirestore.DocumentData;
+      
+      await docRef.update({ 
+        hasBeenCancelled: true 
+      });
+      
+      const restaurantSnap = await this.db
+        .collection('restaurants')
+        .doc(reservationData.restaurant_id)
+        .get();
+      const restaurantData = restaurantSnap.data();
+      
+      const alert = {
+        id: docRef.id,
+        date: new Date().toISOString(),
+        icon: restaurantData?.profilePhoto || '',
+        message: `Your reservation for ${formatDate(reservationData.date)} at ${
+          formatTime(reservationData.date)
+        } has been cancelled`,
+        restaurantId: reservationData.restaurant_id,
+        votes: 0,
+        publisherId: reservationData.user_id,
+      };
+      
+      await this.db.collection('alerts').add(alert);
+      
+      return { 
+        id, 
+        ...reservationData, 
+        hasBeenCancelled: true 
+      };
+    } catch (error) {
+      console.error(`Error cancelling reservation: ${error}`);
+      throw error;
+    }
   }
 
   async getReservations(): Promise<any[]> {
