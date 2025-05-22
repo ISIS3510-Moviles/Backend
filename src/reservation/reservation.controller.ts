@@ -26,7 +26,10 @@ async cancelReservation(@Param('id') id: string) {
   return reservation;
 }
 
-
+@Get('by-restaurant/:restaurantId')
+getReservationsByRestaurantId(@Param('restaurantId') restaurantId: string) {
+  return this.reservationService.getReservationsByRestaurantId(restaurantId);
+}
 
   @Get('by-user/:userId')
   getReservationsByUserId(@Param('userId') userId: string) {

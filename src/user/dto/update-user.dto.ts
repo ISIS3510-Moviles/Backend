@@ -14,4 +14,5 @@ export class UpdateUserDto {
     suscribedRestaurantIds?: string[];
     publishedAlertsIds?: string[];  
     savedProductsIds?: string[];
+    vendorRestaurantId?: string;
 }
