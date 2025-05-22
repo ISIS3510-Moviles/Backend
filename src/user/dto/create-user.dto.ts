@@ -15,4 +15,5 @@ export class CreateUserDto {
   suscribedRestaurantIds?: string[];
   publishedAlertsIds?: string[];
   savedProductsIds?: string[];
+  vendorRestaurantId?: string;
 }

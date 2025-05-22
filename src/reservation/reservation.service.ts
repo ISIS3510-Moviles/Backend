@@ -124,6 +124,30 @@ export class ReservationService {
     }
   }
 
+  async getReservationsByRestaurantId(restaurantId: string): Promise<any[]> {
+    try {
+      
+      const snapshot = await this.db
+        .collection(this.collectionName)
+        .where('restaurant_id', '==', restaurantId)
+        .get();
+      
+      if (snapshot.empty) {
+        return [];
+      }
+      
+      const reservations = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      
+      return reservations;
+    } catch (error) {
+      console.error(`Error searching for reservations with that restaurat id: ${error}`);
+      throw error;
+    }
+  }
+
   async getReservations(): Promise<any[]> {
     const snapshot = await this.db.collection(this.collectionName).get();
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
