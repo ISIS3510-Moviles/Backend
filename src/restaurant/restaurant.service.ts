@@ -389,6 +389,35 @@ async buildRestaurantSmart(
     return true;
   }
 
+  async createRestaurantCheck(restaurant: CreateRestaurantDto) {
+    const snapshot = await this.db
+      .collection(this.collectionName)
+      .where('email', '==', restaurant.email)
+      .get();
+
+    let docSnapshot: FirebaseFirestore.QueryDocumentSnapshot;
+
+    if (!snapshot.empty) {
+      docSnapshot = snapshot.docs[0];
+    } else {
+      const newRestaurant = await this.createRestaurant(restaurant);
+      const newDoc = await this.db
+        .collection(this.collectionName)
+        .doc(newRestaurant.id)
+        .get();
+
+      if (!newDoc.exists) {
+        throw new Error('Failed to retrieve the newly created restaurant');
+      }
+
+      // Simular un QueryDocumentSnapshot para pasar a buildRestaurantSmart
+      docSnapshot = newDoc as FirebaseFirestore.QueryDocumentSnapshot;
+    }
+
+    return await this.buildRestaurantSmart(docSnapshot);
+  }
+
+
   async getRestaurantsByFoodTag(
     tagId: string,
   ): Promise<{ tagName: string | null; restaurants: RestaurantSmart[] }> {
@@ -402,5 +431,5 @@ async buildRestaurantSmart(
       snapshot.docs.map((doc) => this.buildRestaurantSmart(doc)),
     );
     return { tagName, restaurants };
-  }
+  } 
 }

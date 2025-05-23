@@ -22,6 +22,11 @@ export class RestaurantController {
     return this.restaurantService.createRestaurant(createRestaurantDto);
   }
 
+  @Post('check')
+  createRestaurantCheck(@Body() createRestaurantDto: CreateRestaurantDto) {
+    return this.restaurantService.createRestaurantCheck(createRestaurantDto);
+  }
+
   @Get()
   getRestaurants(@Query('nameMatch') nameMatch?: string) {
     return this.restaurantService.getRestaurants(nameMatch);
