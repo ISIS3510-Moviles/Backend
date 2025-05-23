@@ -124,6 +124,54 @@ export class ReservationService {
     }
   }
 
+  async markReservationAsCompleted(id: string): Promise<any> {
+  try {
+    
+    const docRef = this.db.collection(this.collectionName).doc(id);
+    const doc = await docRef.get();
+    
+    if (!doc.exists) {
+      throw new NotFoundException(`Reservation with ID ${id} not found`);
+    }
+    
+    const reservationData = doc.data() as FirebaseFirestore.DocumentData;
+    
+    if (reservationData.hasBeenCancelled) {
+      throw new Error(`Cannot complete a cancelled reservation`);
+    }
+    
+    await docRef.update({
+      isCompleted: true
+    });
+    
+    const restaurantSnap = await this.db
+      .collection('restaurants')
+      .doc(reservationData.restaurant_id)
+      .get();
+    const restaurantData = restaurantSnap.data();
+    
+    const alert = {
+      date: new Date().toISOString(),
+      icon: restaurantData?.profilePhoto || '',
+      message: `Your reservation for ${format(new Date(reservationData.date), 'PPP')} at ${restaurantData?.name || 'the restaurant'} has been completed`,
+      restaurantId: reservationData.restaurant_id,
+      votes: 0,
+      publisherId: reservationData.user_id,
+    };
+    
+    await this.db.collection('alerts').add(alert);
+    
+    return {
+      id,
+      ...reservationData,
+      isCompleted: true
+    };
+  } catch (error) {
+    console.error(`Error marking reservation as completed: ${error}`);
+    throw error;
+  }
+}
+
   async getReservationsByRestaurantId(restaurantId: string): Promise<any[]> {
     try {
       
