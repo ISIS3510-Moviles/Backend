@@ -17,6 +17,19 @@ export class ReservationController {
     return this.reservationService.getReservations();
   }
 
+  @Patch(':id/complete')
+async markReservationAsCompleted(@Param('id') id: string) {
+  try {
+    const reservation = await this.reservationService.markReservationAsCompleted(id);
+    return reservation;
+  } catch (error) {
+    if (error instanceof NotFoundException) {
+      throw new NotFoundException(error.message);
+    }
+    throw new Error(`Failed to mark reservation as completed: ${error.message}`);
+  }
+}
+
 @Patch(':id/cancel')
 async cancelReservation(@Param('id') id: string) {
   const reservation = await this.reservationService.cancelReservation(id);
