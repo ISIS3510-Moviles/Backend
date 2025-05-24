@@ -151,6 +151,7 @@ export class ReservationService {
     const restaurantData = restaurantSnap.data();
     
     const alert = {
+      id: docRef.id,
       date: new Date().toISOString(),
       icon: restaurantData?.profilePhoto || '',
       message: `Your reservation for ${format(new Date(reservationData.date), 'PPP')} at ${restaurantData?.name || 'the restaurant'} has been completed`,

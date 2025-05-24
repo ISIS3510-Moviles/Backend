@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import admin from 'firebase.config';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -13,7 +13,6 @@ export class UserService {
   private collectionName = 'users';
 
   constructor(private readonly httpService: HttpService) {}
-
 
 async createUser(user: CreateUserDto): Promise<any> {
   const docRef = user.id?.trim()
@@ -53,6 +52,39 @@ async createUser(user: CreateUserDto): Promise<any> {
 
     return await this.getUserByIdFull(userId);
   }
+
+async getVendorRestaurant(userId: string): Promise<any> {
+  try {
+    const userDoc = await this.db.collection('users').doc(userId).get();
+    
+    if (!userDoc.exists) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+    
+    const userData = userDoc.data() as FirebaseFirestore.DocumentData;
+    
+    if (userData.role !== 'vendor' || !userData.vendorRestaurantId) {
+      throw new BadRequestException('User is not a vendor or has no restaurant assigned');
+    }
+    
+    const restaurantDoc = await this.db
+      .collection('restaurants')
+      .doc(userData.vendorRestaurantId)
+      .get();
+    
+    if (!restaurantDoc.exists) {
+      throw new NotFoundException(`Restaurant with ID ${userData.vendorRestaurantId} not found`);
+    }
+    
+    return {
+      id: restaurantDoc.id,
+      ...restaurantDoc.data()
+    };
+  } catch (error) {
+    console.error(`Error fetching vendor restaurant: ${error}`);
+    throw error;
+  }
+}
 
 
   async getUsers(): Promise<any[]> {

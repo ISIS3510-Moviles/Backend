@@ -45,6 +45,10 @@ async getUserByEmail(@Param('email') email: string) {
   }
   return user;
 }
+  @Get(':id/restaurant')
+  async getVendorRestaurant(@Param('id') id: string) {
+    return this.userService.getVendorRestaurant(id);
+  }
 
   @Get(':id')
   getUserById(@Param('id') id: string) {
